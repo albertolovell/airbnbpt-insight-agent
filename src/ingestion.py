@@ -43,8 +43,8 @@ def chunk_reviews(df_reviews: pd.DataFrame):
   rows = []
   for idx, row in df_reviews.iterrows():
     listing_id = row['listing_id']
-    review_id = row['review_id']
-    text = row['review_text']
+    review_id = row['id']
+    text = row['comments']
 
     for i, chunk in enumerate(splitter.split_text(text)):
       rows.append({
@@ -77,8 +77,9 @@ if __name__=='__main__':
     raise FileNotFoundError('no review csvs found in data/raw')
   print(f"found {len(review_files)} review files. concatenating...")
 
-  reviews_df = concat_csvs(review_files, usecols=['listing_id', 'review_id', 'review_text'])
-  print(f"total review rows: {reviews_df.shape}")
+  reviews_df = concat_csvs(review_files, usecols=['listing_id', 'id', 'comments'])
+  reviews_df = reviews_df.dropna(subset=['comments'])
+  print(f"total review rows after dropna: {reviews_df.shape}")
 
   print('chunking reviews (this can take a minute) ...')
   review_chunks_df = chunk_reviews(reviews_df)
