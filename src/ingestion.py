@@ -1,30 +1,90 @@
 import os
+import glob
 import pandas as pd
+from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-RAW_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'raw')
-PROCESSED_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'processed')
+BASE_DIR = Path(__file__).parent.parent
+RAW_DIR = BASE_DIR / 'data' / 'raw'
+PROCESSED_DIR = BASE_DIR / 'data' / 'processed'
+TEMP_DIR = BASE_DIR / 'data' / 'temp'
 
-def load_csv(name: str) -> pd.DataFrame:
-  path = os.path.join(RAW_DIR, name)
-  return pd.read_csv(path)
+LISTING_PATTERNS = [
+  'lisbon_listings_*.csv',
+  'porto_listings_*.csv'
+]
+REVIEW_PATTERNS = [
+  'lisbon_reviews_*.csv',
+  'porto_reviews_*.csv'
+]
 
-def chunk_reviews(df: pd.DataFrame, chunk_size=1000, overlap=200):
-  splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
-  docs = []
-  for _, row in df.iterrows():
+CHUNK_SIZE = 1000
+OVERLAP = 200
+
+def find_all_csvs(patterns_list):
+  files = []
+  for pat in patterns_list:
+    files.extend(glob.glob(str(RAW_DIR / pat)))
+  return sorted(files)
+
+def concat_csvs(file_list, usecols=None, dtype=None):
+  dfs = []
+  for fp in file_list:
+    print(f"reading {os.path.basename(fp)}")
+    df = pd.read_csv(fp, usecols=usecols, dtype=dtype)
+    dfs.append(df)
+  combined = pd.concat(dfs, ignore_index=True)
+  return combined
+
+def chunk_reviews(df_reviews: pd.DataFrame):
+  splitter = RecursiveCharacterTextSplitter(
+    chunk_size=CHUNK_SIZE,
+    chunk_overlap=OVERLAP)
+  rows = []
+  for idx, row in df_reviews.iterrows():
+    listing_id = row['listing_id']
+    review_id = row['review_id']
     text = row['review_text']
+
     for i, chunk in enumerate(splitter.split_text(text)):
-      docs.append({
-        'listing_id': row['listing_id'],
-        'chunk_id': f"{row['review_id']}_{i}",
+      rows.append({
+        'listing_id': listing_id,
+        'chunk_id': f"{review_id}_{i}",
         'text': chunk
       })
-  return pd.DataFrame(docs)
+  return pd.DataFrame(rows)
 
 if __name__=='__main__':
-  os.makedirs(PROCESSED_DIR, exist_ok=True)
-  reviews = load_csv('reviews.csv')
-  review_chunks = chunk_reviews(reviews)
-  review_chunks.to_parquet(os.path.join(PROCESSED_DIR, 'review_chunks.parquet'), index=False)
-  print('Review chunks saved: ', review_chunks.shape)
+  PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+  TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+  # concat listing csvs
+  listing_files = find_all_csvs(LISTING_PATTERNS)
+  if not listing_files:
+    raise FileNotFoundError('no listing csvs found in data/raw')
+  print(f"found {len(listing_files)} listing files. concatenating...")
+
+  listings_df = concat_csvs(listing_files)
+  print(f"total listings rows: {listings_df.shape}")
+
+  listings_parquet = PROCESSED_DIR / 'listings.parquet'
+  listings_df.to_parquet(str(listings_parquet), index=False)
+  print(f"saved all listings to {listings_parquet}")
+
+  # concat review csvs
+  review_files = find_all_csvs(REVIEW_PATTERNS)
+  if not review_files:
+    raise FileNotFoundError('no review csvs found in data/raw')
+  print(f"found {len(review_files)} review files. concatenating...")
+
+  reviews_df = concat_csvs(review_files, usecols=['listing_id', 'review_id', 'review_text'])
+  print(f"total review rows: {reviews_df.shape}")
+
+  print('chunking reviews (this can take a minute) ...')
+  review_chunks_df = chunk_reviews(reviews_df)
+  print(f"total review chunks: {review_chunks_df.shape}")
+
+  review_chunks_parquet = PROCESSED_DIR / 'review_chunks.parquet'
+  review_chunks_df.to_parquet(str(review_chunks_parquet), index=False)
+  print(f"saved review chunks to {review_chunks_parquet}")
+  print('* ingestion and chunking complete *')
