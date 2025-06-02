@@ -65,7 +65,7 @@ class ReviewTriple(BaseModel):
 PROMPT_TEMPLATE = PromptTemplate(
   template=(
     "You are given a chunk of an Airbnb review. Extract all subject-predicate-object triples. "
-    "Format as a JSON array of objects [{\"subject\":..., \"predicate\":..., \"object\":...}, ...].\n\n"
+    "Format as a JSON array of objects [{{\"subject\":..., \"predicate\":..., \"object\":...}}, ...].\n\n"
     "Review Chunk:\n\"\"\"\n{chunk}\n\"\"\"\n\n"
     "Ensure each triple is clear and relevant to the review."
   ),
