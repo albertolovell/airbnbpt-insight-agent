@@ -1,11 +1,9 @@
-import os
 import ast
 import pandas as pd
 from pathlib import Path
 from typing import List, Tuple
 
 from langchain_community.llms import HuggingFacePipeline
-from langchain_community.chains import create_extraction_chain
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from pydantic import BaseModel, Field
@@ -63,14 +61,21 @@ class ReviewTriple(BaseModel):
   predicate: str = Field(..., description='the relationship')
   object: str = Field(..., description='the object entity or value')
 
-def make_extraction_chain() -> CreateExtractionChain:
-  """
-  langchain extraction chain using llama-2-7b for triple extraction
-  """
+
+PROMPT_TEMPLATE = PromptTemplate(
+  template=(
+    "You are given a chunk of an Airbnb review. Extract all subject-predicate-object triples. "
+    "Format as a JSON array of objects [{\"subject\":..., \"predicate\":..., \"object\":...}, ...].\n\n"
+    "Review Chunk:\n\"\"\"\n{chunk}\n\"\"\"\n\n"
+    "Ensure each triple is clear and relevant to the review."
+  ),
+  input_variables=['chunk']
+)
+
+def load_llama_pipeline(model_name: str = 'meta-llama/Llama-2-7b-hf') -> HuggingFacePipeline:
   from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
   import torch
 
-  model_name = 'meta-llama/Llama-2-7b-hf'
   tokenizer = AutoTokenizer.from_pretrained(model_name)
   model = AutoModelForCausalLM.from_pretrained(
     model_name,
@@ -86,28 +91,17 @@ def make_extraction_chain() -> CreateExtractionChain:
     temperature=0.0,
     do_sample=False
   )
-  llm = HuggingFacePipeline(pipeline=hf_pipe)
-
-  parser = PydanticOutputParser(pydantic_object=ReviewTriple)
-
-  prompt = PromptTemplate(
-    template=(
-      "You are given a chunk of an Airbnb review. Extract all subject-predicate-object triples. "
-      "Format as a JSON array of objects [{\"subject\":..., \"predicate\":..., \"object\":...}, ...].\n\n"
-      "Review Chunk:\n\"\"\"\n{chunk}\n\"\"\"\n\n"
-      "Ensure each triple is clear and relevant to the review."
-    ),
-    input_variables=['chunk']
-  )
-  return create_extraction_chain(llm=llm, output_parser=parser, prompt=prompt)
+  return HuggingFacePipeline(pipeline=hf_pipe)
 
 
-def extract_review_triples(review_chunks_df: pd.DataFrame) -> List[Tuple[str, str, str]]:
+def extract_review_triples(
+    review_chunks_df: pd.DataFrame,
+    llama_pipe: HuggingFacePipeline,
+    parser: PydanticOutputParser,
+    prompt_template: PromptTemplate) -> List[Tuple[str, str, str]]:
   """
   Iterate over each chunk, run the LLaMA-based extraction chain, and collect triples
-  and prefix each subject with listing_id for grounding.
   """
-  chain = make_extraction_chain()
   triples: List[Tuple[str, str, str]] = []
 
   for idx, row in review_chunks_df.iterrows():
@@ -116,9 +110,15 @@ def extract_review_triples(review_chunks_df: pd.DataFrame) -> List[Tuple[str, st
 
     if not isinstance(chunk, str) or not chunk.strip():
       continue
+    prompt = prompt_template.format(chunk=chunk)
+
     try:
-      result: List[ReviewTriple] = chain.run({'chunk': chunk})
-      for triple_obj in result:
+      raw_out = llama_pipe(prompt)
+      generated_text = raw_out[0]['generated_text'].strip()
+      parsed = parser.parse(generated_text)
+      parsed_list = parsed if isinstance(parsed, list) else [parsed]
+
+      for triple_obj in parsed_list:
         subject = f"{lid}:{triple_obj.subject}"
         triples.append((subject, triple_obj.predicate, triple_obj.object))
     except Exception:
@@ -141,8 +141,17 @@ if __name__ == "__main__":
   meta_df.to_csv(meta_out, index=False)
   print(f"saved metadata triples to {meta_out}")
 
-  print('extracting review triples with llama (this can be slow)...')
-  review_triples = extract_review_triples(review_chunks_df)
+  print('loading llama-2-7b pipeline (may take a minute)...')
+  llama_pipe = load_llama_pipeline()
+  parser = PydanticOutputParser(pydantic_object=ReviewTriple)
+
+  print('extracting review triples with llama (this will be slow)...')
+  review_triples = extract_review_triples(
+    review_chunks_df,
+    llama_pipe=llama_pipe,
+    parser=parser,
+    prompt_template=PROMPT_TEMPLATE
+  )
   print(f"found {len(review_triples)} review triples")
 
   review_df = pd.DataFrame(review_triples, columns=['subject', 'predicate', 'object'])
