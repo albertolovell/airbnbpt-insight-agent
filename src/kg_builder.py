@@ -4,8 +4,8 @@ import pandas as pd
 from pathlib import Path
 from typing import List, Tuple
 
-from langchain.llms import HuggingFacePipeline
-from langchain.chains import CreateExtractionChain
+from langchain_community.llms import HuggingFacePipeline
+from langchain_community.chains import create_extraction_chain
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from pydantic import BaseModel, Field
@@ -99,7 +99,7 @@ def make_extraction_chain() -> CreateExtractionChain:
     ),
     input_variables=['chunk']
   )
-  return CreateExtractionChain(llm=llm, output_parser=parser, prompt=prompt)
+  return create_extraction_chain(llm=llm, output_parser=parser, prompt=prompt)
 
 
 def extract_review_triples(review_chunks_df: pd.DataFrame) -> List[Tuple[str, str, str]]:
@@ -117,7 +117,7 @@ def extract_review_triples(review_chunks_df: pd.DataFrame) -> List[Tuple[str, st
     if not isinstance(chunk, str) or not chunk.strip():
       continue
     try:
-      result = chain.run({'chunk': chunk})
+      result: List[ReviewTriple] = chain.run({'chunk': chunk})
       for triple_obj in result:
         subject = f"{lid}:{triple_obj.subject}"
         triples.append((subject, triple_obj.predicate, triple_obj.object))
