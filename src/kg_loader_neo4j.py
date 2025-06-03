@@ -37,10 +37,10 @@ def ingest_metadata_triples(drive, csv_path: Path):
     """
   df = pd.read_csv(csv_path)
   with driver.session() as session:
-    session.run('CREATE CONSTRAINT IF NOT EXISTS ON (l:Listing) ASSERT l.id IS UNIQUE')
-    session.run('CREATE CONSTRAINT IF NOT EXISTS ON (a:Amenity) ASSERT a.name IS UNIQUE')
-    session.run('CREATE CONSTRAINT IF NOT EXISTS ON (n:Neighborhood) ASSERT n.name IS UNIQUE')
-    session.run('CREATE CONSTRAINT IF NOT EXISTS ON (p:PriceLevel) ASSERT p.level IS UNIQUE')
+    session.run('CREATE CONSTRAINT IF NOT EXISTS FOR (l:Listing) REQUIRE l.id IS UNIQUE')
+    session.run('CREATE CONSTRAINT IF NOT EXISTS FOR (a:Amenity) REQUIRE a.name IS UNIQUE')
+    session.run('CREATE CONSTRAINT IF NOT EXISTS FOR (n:Neighborhood) REQUIRE n.name IS UNIQUE')
+    session.run('CREATE CONSTRAINT IF NOT EXISTS FOR (p:PriceLevel) REQUIRE p.level IS UNIQUE')
 
     tx = session.begin_transaction()
     for _, row in df.iterrows():
@@ -48,10 +48,7 @@ def ingest_metadata_triples(drive, csv_path: Path):
       pred = row['predicate']
       obj = row['object']
 
-      tx.run(
-        'MERGE (l:Listing {id: $lid})',
-        lid=subj
-      )
+      tx.run('MERGE (l:Listing {id: $lid})', lid=subj)
 
       if pred == 'has_amenity':
         tx.run(lid=subj, obj=obj)
@@ -61,6 +58,7 @@ def ingest_metadata_triples(drive, csv_path: Path):
         tx.run(lid=subj, obj=obj)
     tx.commit()
     print(f"ingested {len(df)} metadata triples into neo4j")
+
 
 if __name__=='__main__':
   driver = create_neo4j_driver(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
