@@ -160,3 +160,5 @@ if __name__ == "__main__":
   print(f"saved review triples to {review_out}")
 
   print('knowledge graph construction complete')
+
+# deprecated
