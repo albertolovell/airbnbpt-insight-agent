@@ -51,11 +51,32 @@ def ingest_metadata_triples(drive, csv_path: Path):
       tx.run('MERGE (l:Listing {id: $lid})', lid=subj)
 
       if pred == 'has_amenity':
-        tx.run(lid=subj, obj=obj)
+        tx.run(
+          """
+          MERGE (a:Amenity {name: $obj})
+          MERGE (l:Listing {id: $lid})
+          MERGE (l)-[:HAS_AMENITY]->(a)
+          """,
+          lid=subj, obj=obj
+          )
       elif pred == 'in_neighborhood':
-        tx.run(lid=subj, obj=obj)
+        tx.run(
+          """
+          MERGE (n:Neighborhood {name: $obj})
+          MERGE (l:Listing {id: $lid})
+          MERGE (l)-[:IN_NEIGHBORHOOD]->(n)
+          """,
+          lid=subj, obj=obj
+          )
       elif pred == 'price_level':
-        tx.run(lid=subj, obj=obj)
+        tx.run(
+          """
+          MERGE (p:PriceLevel {level: $obj})
+          MERGE (l:Listing {id: $lid})
+          MERGE (l)-[:PRICE_LEVEL]->(p)
+          """,
+          lid=subj, obj=obj
+          )
     tx.commit()
     print(f"ingested {len(df)} metadata triples into neo4j")
 
