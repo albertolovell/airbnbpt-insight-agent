@@ -39,7 +39,7 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
   listing_ids = batch['listing_id'].tolist()
   embeddings = model.encode(texts, show_progress_bar=False)
 
-  client.upload_collection(
+  client.upsert(
     collection_name=COLLECTION_NAME,
     points=[
       qdrant_models.PointStruct(
