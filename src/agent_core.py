@@ -1,5 +1,5 @@
 from langchain_community.llms import HuggingFacePipeline
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 # from langchain_qdrant import Qdrant as LCQdrant
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import PromptTemplate
@@ -27,7 +27,7 @@ embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-
 vector_store = QdrantVectorStore(
   client=qdrant_client,
   collection_name='airbnb_reviews',
-  embeddings=embeddings
+  embedding=embeddings
 )
 
 llama_model_name = 'meta-llama/Llama-2-7b-hf'
