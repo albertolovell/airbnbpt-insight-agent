@@ -10,4 +10,4 @@ class QueryRequest(BaseModel):
 @app.post('/ask')
 async def ask_agent(req: QueryRequest):
   result = run_agent(req.query)
-  return {'answer: ': result}
+  return {'answer': result}
