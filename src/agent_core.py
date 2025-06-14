@@ -30,7 +30,7 @@ llama_pipe = pipeline(
   'text-generation',
   model=model,
   tokenizer=tokenizer,
-  max_length=1024,
+  max_length=512,
   temperature=0.0,
   do_sample=False
 )
