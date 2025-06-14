@@ -12,6 +12,7 @@ from neo4j import GraphDatabase
 from dotenv import load_dotenv
 import os
 import torch
+import time
 
 load_dotenv()
 NEO4J_URI = os.getenv('NEO4J_URI')
@@ -93,7 +94,25 @@ def build_context(docs, metas):
   return context
 
 def run_agent(query: str):
+  timings = {}
+
+  # qdrant
+  t0 = time.time()
   docs = vector_store.similarity_search(query, k=1)
+  timings['qdrant_search'] = time.time() - t0
+
+  # neo4j
+  t0 = time.time()
   metas = [query_neo4j(doc.metadata.get('listing_id')) for doc in docs]
+  timings['neo4j_lookup'] = time.time() - t0
+
+  # build context
   context = build_context(docs, metas)
-  return chain.run(query=query, context=context)
+
+  # llm
+  t0 = time.time()
+  result = chain.run(query=query, context=context)
+  timings['llm_inference'] = time.time() - t0
+
+  print(f"timings: {timings}")
+  return {'answer': result, "timings": timings}
