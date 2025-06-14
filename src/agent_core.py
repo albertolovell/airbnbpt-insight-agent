@@ -24,7 +24,7 @@ embed_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 vector_store = LCQdrant(
   client=qdrant_client,
   collection_name='airbnb_reviews',
-  embedding_function=embed_model.encode
+  embedding_function=lambda texts: embed_model.encode(texts).tolist()
 )
 
 llama_model_name = 'meta-llama/Llama-2-7b-hf'
