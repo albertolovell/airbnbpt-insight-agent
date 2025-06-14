@@ -1,5 +1,5 @@
 from langchain_community.llms import HuggingFacePipeline
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 # from langchain_qdrant import Qdrant as LCQdrant
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import PromptTemplate
