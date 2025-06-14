@@ -18,7 +18,7 @@ NEO4J_URI = os.getenv('NEO4J_URI')
 NEO4J_USER = os.getenv('NEO4J_USER')
 NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
 
-qdrant_client = QdrantClient(host='localhost', port=6333)
+qdrant_client = QdrantClient(host='localhost', port=6333, timeout=60.0)
 neo4j = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 # embed_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -93,7 +93,7 @@ def build_context(docs, metas):
   return context
 
 def run_agent(query: str):
-  docs = vector_store.similarity_search(query, k=3)
+  docs = vector_store.similarity_search(query, k=1)
   metas = [query_neo4j(doc.metadata.get('listing_id')) for doc in docs]
   context = build_context(docs, metas)
   return chain.run(query=query, context=context)
