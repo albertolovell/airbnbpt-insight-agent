@@ -115,4 +115,7 @@ def run_agent(query: str):
   timings['llm_inference'] = time.time() - t0
 
   print(f"timings: {timings}")
+  with open('timings.log', 'a') as f:
+    f.write(f"{query} | {timings}\n")
+
   return {'answer': result, "timings": timings}
