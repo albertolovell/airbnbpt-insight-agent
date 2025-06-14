@@ -18,7 +18,7 @@ embed_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 qdrant = QdrantClient(host='localhost', port=6333)
 neo4j = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-llama_model_name = 'meta-llama/Meta-Llama-3-8B'
+llama_model_name = 'meta-llama/Llama-2-7b-hf'
 tokenizer = AutoTokenizer.from_pretrained(llama_model_name)
 model = AutoModelForCausalLM.from_pretrained(
   llama_model_name,
