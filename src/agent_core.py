@@ -1,5 +1,5 @@
 from langchain_community.llms import HuggingFacePipeline
-from langchain.vectorstores import Qdrant as LCQdrant
+from langchain_qdrant import Qdrant as LCQdrant
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
