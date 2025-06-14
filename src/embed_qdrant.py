@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qdrant_models
 from pathlib import Path
+# 39288 embeddings complete
 
 DATA_PATH = Path('data/processed/review_chunks.parquet')
 STATE_PATH = Path('data/processed/qdrant_checkpoint.txt')
