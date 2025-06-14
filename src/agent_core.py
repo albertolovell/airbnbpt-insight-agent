@@ -1,12 +1,14 @@
 from langchain_community.llms import HuggingFacePipeline
-from langchain_qdrant import Qdrant as LCQdrant
+from langchain.embeddings import HuggingFaceEmbeddings
+# from langchain_qdrant import Qdrant as LCQdrant
+from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 from neo4j import GraphDatabase
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import os
 import torch
@@ -19,12 +21,13 @@ NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
 qdrant_client = QdrantClient(host='localhost', port=6333)
 neo4j = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-embed_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+# embed_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
 
-vector_store = LCQdrant(
+vector_store = QdrantVectorStore(
   client=qdrant_client,
   collection_name='airbnb_reviews',
-  embedding_function=lambda texts: embed_model.encode(texts).tolist()
+  embeddings=embeddings
 )
 
 llama_model_name = 'meta-llama/Llama-2-7b-hf'
@@ -70,7 +73,15 @@ def query_neo4j(listing_id: str):
         collect(DISTINCT n.name) AS neighborhoods,
         collect(DISTINCT p.level) AS price_levels
     """, lid=listing_id).single()
-    return res
+    return {
+      'amenities': res['amenities'],
+      'neighborhoods': res['neighborhoods'],
+      'price_levels': res['price_levels']
+    } if res else {
+      'amenities': [],
+      'neighborhoods': [],
+      'price_levels': []
+    }
 
 def build_context(docs, metas):
   context = ''
