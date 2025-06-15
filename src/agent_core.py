@@ -4,9 +4,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from langchain_community.llms import huggingface_pipeline
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams
+# from qdrant_client.http.models import Distance, VectorParams
 from neo4j import GraphDatabase
 # from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
@@ -31,19 +32,22 @@ vector_store = QdrantVectorStore(
   embedding=embeddings
 )
 
-llama_model_name = 'meta-llama/Llama-2-7b-hf'
+# llama_model_name = 'meta-llama/Llama-2-7b-hf' #llama7b 1/2
+model_name = 'distilgpt2'
+
 tokenizer = AutoTokenizer.from_pretrained(llama_model_name)
-model = AutoModelForCausalLM.from_pretrained(
-  llama_model_name,
-  torch_dtype=torch.float16,
-  device_map='auto'
-)
+# model = AutoModelForCausalLM.from_pretrained(
+#   llama_model_name,
+#   torch_dtype=torch.float16,
+#   device_map='auto'
+# ) # llama7b 2/2
+model = AutoModelForCausalLM.from_pretrained(model_name)
 
 llama_pipe = pipeline(
   'text-generation',
   model=model,
   tokenizer=tokenizer,
-  max_length=512,
+  max_length=64, # reduced for response time
   temperature=0.0,
   do_sample=False
 )
