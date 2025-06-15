@@ -20,5 +20,5 @@ def get_agent_runner():
 async def ask_agent(req: QueryRequest):
   agent_runner = get_agent_runner()
   result = agent_runner(req.query)
-  return agent_runner(req.query)
+  return {'answer': result}
   # return {'answer': f"recieved: {req.query}"}
