@@ -4,7 +4,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from langchain_community.llms import huggingface_pipeline
+# from langchain_community.llms import huggingface_pipeline
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from qdrant_client import QdrantClient
 # from qdrant_client.http.models import Distance, VectorParams
@@ -43,7 +43,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 # ) # llama7b 2/2
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
-llama_pipe = pipeline(
+llm_pipe = pipeline(
   'text-generation',
   model=model,
   tokenizer=tokenizer,
@@ -51,7 +51,7 @@ llama_pipe = pipeline(
   do_sample=False
 )
 
-llm = HuggingFacePipeline(pipeline=llama_pipe)
+llm = HuggingFacePipeline(pipeline=llm_pipe)
 
 prompt = PromptTemplate.from_template("""
   You are an Airbnb assistant. Given the context, answer the user's query helpfully.
@@ -61,7 +61,7 @@ prompt = PromptTemplate.from_template("""
   Context:
   {context}
 
-  Answer:
+  Answer: Provide one listing's name, amenities, and neighborhood if available. If no data is found, say so clearly.
 """)
 
 chain = LLMChain(llm=llm, prompt=prompt)
@@ -77,11 +77,14 @@ def query_neo4j(listing_id: str):
         collect(DISTINCT n.name) AS neighborhoods,
         collect(DISTINCT p.level) AS price_levels
     """, lid=listing_id).single()
-    return {
-      'amenities': res['amenities'],
-      'neighborhoods': res['neighborhoods'],
-      'price_levels': res['price_levels']
-    } if res else {
+    if res:
+      return {
+        'amenities': res['amenities'],
+        'neighborhoods': res['neighborhoods'],
+        'price_levels': res['price_levels']
+      }
+    else:
+      return {
       'amenities': [],
       'neighborhoods': [],
       'price_levels': []
@@ -94,7 +97,7 @@ def build_context(docs, metas):
     context += f"Amenities: {meta['amenities']}\n"
     context += f"Neighborhoods: {meta['neighborhoods']}\n"
     context += f"Price Level: {meta['price_levels']}\n\n"
-  return context
+  return context.strip()
 
 def run_agent(query: str):
   timings = {}
