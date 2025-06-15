@@ -116,6 +116,6 @@ def run_agent(query: str):
 
   print(f"timings: {timings}")
   with open('data/timings.log', 'a') as f:
-    f.write(f"{query} | {timings}\n")
+    f.write(f"{query}\n step_times: {timings}\n")
 
   return {'answer': result}
