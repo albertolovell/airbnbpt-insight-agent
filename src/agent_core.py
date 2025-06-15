@@ -35,7 +35,7 @@ vector_store = QdrantVectorStore(
 # llama_model_name = 'meta-llama/Llama-2-7b-hf' #llama7b 1/2
 model_name = 'distilgpt2'
 
-tokenizer = AutoTokenizer.from_pretrained(llama_model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 # model = AutoModelForCausalLM.from_pretrained(
 #   llama_model_name,
 #   torch_dtype=torch.float16,
