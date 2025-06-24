@@ -54,15 +54,16 @@ llm_pipe = pipeline(
 llm = HuggingFacePipeline(pipeline=llm_pipe)
 
 prompt = PromptTemplate.from_template("""
-  You are an Airbnb assistant. Given the context, answer the user's query helpfully.
+  You are an Airbnb assistant. Given the user's query and context provided, generate a helpful, concise answer. If context is missing, say: 'Sorry, no data found."
 
-  User query: {query}
+  User query:
+  {query}
 
   Context:
   {context}
 
-  Answer: Provide one listing's name, amenities, and neighborhood if available. If no data is found, say so clearly.
-""")
+  Answer:
+  """)
 
 chain = LLMChain(llm=llm, prompt=prompt)
 
@@ -106,6 +107,8 @@ def run_agent(query: str):
   t0 = time.time()
   docs = vector_store.similarity_search(query, k=1)
   timings['qdrant_search'] = time.time() - t0
+  if not docs:
+    return{'answer': "Sorry, I couldn't find any relevant data for that query."}
 
   # neo4j
   t0 = time.time()
