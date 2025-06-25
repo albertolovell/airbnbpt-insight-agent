@@ -3,6 +3,7 @@ import pandas as pd
 # from qdrant_client.http import models as qdrant_models
 from tqdm import tqdm
 from pathlib import Path
+# 39288 docs upserted
 
 DATA_PATH = Path('data/processed/review_chunks.parquet')
 STATE_PATH = Path('data/processed/qdrant_payload_checkpoint.txt')
