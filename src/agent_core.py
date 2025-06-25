@@ -29,7 +29,8 @@ embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-
 vector_store = QdrantVectorStore(
   client=qdrant_client,
   collection_name='airbnb_reviews',
-  embedding=embeddings
+  embedding=embeddings,
+  content_payload_key='text'
 )
 
 # llama_model_name = 'meta-llama/Llama-2-7b-hf' #llama7b 1/2
