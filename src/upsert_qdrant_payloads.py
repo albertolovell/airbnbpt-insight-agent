@@ -26,7 +26,6 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
   points=[
     qdrant_models.PointStruct(
       id=int(i + j),
-      vector=None,
       payload={
         'text': texts[j],
         'listing_id': listing_ids[j]}
@@ -34,9 +33,10 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
     for j in range(len(texts))
   ]
 
-  client.upsert(collection_name=COLLECTION_NAME, points=points)
+  if points:
+    client.upsert(collection_name=COLLECTION_NAME, points=points)
 
   with open(STATE_PATH, 'w') as f:
     f.write(str(i + BATCH_SIZE))
 
-print('* payload upsert to qdrant complete *')
+print('* payload-only upsert to qdrant complete *')
