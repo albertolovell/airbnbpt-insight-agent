@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient
 import pandas as pd
-from qdrant_client.http import models as qdrant_models
+# from qdrant_client.http import models as qdrant_models
 from tqdm import tqdm
 from pathlib import Path
 
@@ -22,19 +22,18 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
   batch = df.iloc[i:i+BATCH_SIZE]
   texts = batch['text'].tolist()
   listing_ids = batch['listing_id'].tolist()
+  point_ids = [int(i + j) for j in range(len(batch))]
 
-  points=[
-    qdrant_models.PointStruct(
-      id=int(i + j),
-      payload={
-        'text': texts[j],
-        'listing_id': listing_ids[j]}
-    )
-    for j in range(len(texts))
+  payloads = [
+    {'text': texts[j], 'listing_id': listing_ids[j]}
+    for j in range(len(batch))
   ]
 
-  if points:
-    client.upsert(collection_name=COLLECTION_NAME, points=points)
+  client.set_payload(
+    collection_name=COLLECTION_NAME,
+    payload=payloads,
+    points=point_ids
+  )
 
   with open(STATE_PATH, 'w') as f:
     f.write(str(i + BATCH_SIZE))
