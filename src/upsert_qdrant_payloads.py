@@ -24,16 +24,14 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
   listing_ids = batch['listing_id'].tolist()
   point_ids = [int(i + j) for j in range(len(batch))]
 
-  payloads = [
-    {'text': texts[j], 'listing_id': listing_ids[j]}
-    for j in range(len(batch))
-  ]
-
-  client.set_payload(
-    collection_name=COLLECTION_NAME,
-    payload=payloads,
-    points=point_ids
-  )
+  for j, point_id in enumerate(point_ids):
+    client.set_payload(
+      collection_name=COLLECTION_NAME,
+      payload={
+        'text': texts[j], 'listing_id': listing_ids[j]
+      },
+      points=[point_id]
+    )
 
   with open(STATE_PATH, 'w') as f:
     f.write(str(i + BATCH_SIZE))
