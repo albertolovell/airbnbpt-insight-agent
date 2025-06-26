@@ -30,7 +30,7 @@ vector_store = QdrantVectorStore(
   client=qdrant_client,
   collection_name='airbnb_reviews',
   embedding=embeddings,
-  content_payload_key='text'
+  content_payload_key='text',
   metadata_payload_key=['listing_id']
 )
 
