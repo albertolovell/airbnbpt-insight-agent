@@ -1,19 +1,14 @@
-from langchain_community.llms import HuggingFacePipeline
-from langchain_huggingface import HuggingFaceEmbeddings
-# from langchain_qdrant import Qdrant as LCQdrant
+from langchain_huggingface import HuggingFaceEmbeddings, HuggingFacePipeline
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
-# from langchain_community.llms import huggingface_pipeline
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 from qdrant_client import QdrantClient
-# from qdrant_client.http.models import Distance, VectorParams
 from neo4j import GraphDatabase
 # from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
-import os
-import torch
-import time
+from datetime import datetime
+import os, time
 
 load_dotenv()
 NEO4J_URI = os.getenv('NEO4J_URI')
@@ -30,43 +25,26 @@ vector_store = QdrantVectorStore(
   client=qdrant_client,
   collection_name='airbnb_reviews',
   embedding=embeddings,
-  content_payload_key='text',
-  metadata_payload_key='metadata'
+  content_payload_key='text'
 )
 
 # llama_model_name = 'meta-llama/Llama-2-7b-hf' #llama7b 1/2
-model_name = 'distilgpt2'
+model_name = 'google/flan-t5-base'
+# model_name = 'distilgpt2'
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-# model = AutoModelForCausalLM.from_pretrained(
-#   llama_model_name,
-#   torch_dtype=torch.float16,
-#   device_map='auto'
-# ) # llama7b 2/2
-model = AutoModelForCausalLM.from_pretrained(model_name)
-
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 llm_pipe = pipeline(
-  'text-generation',
+  'text2text-generation',
   model=model,
   tokenizer=tokenizer,
-  max_new_tokens=64,
-  do_sample=False
+  max_new_tokens=128
 )
-
 llm = HuggingFacePipeline(pipeline=llm_pipe)
 
-prompt = PromptTemplate.from_template("""
-  You are an Airbnb assistant. Given the user's query and context provided, generate a helpful, concise answer. If context is missing, say: 'Sorry, no data found."
-
-  User query:
-  {query}
-
-  Context:
-  {context}
-
-  Answer:
-  """)
-
+prompt = PromptTemplate.from_template(
+  "Context:\n{context}\n\nQuestion:\n{query}\n\nAnswer concisely:\n"
+  )
 chain = LLMChain(llm=llm, prompt=prompt)
 
 def query_neo4j(listing_id: str):
@@ -93,10 +71,11 @@ def query_neo4j(listing_id: str):
       'price_levels': []
     }
 
-def build_context(docs, metas):
+def build_context(docs, metas, listing_ids):
   context = ''
-  for doc, meta in zip(docs, metas):
+  for doc, meta, lid in zip(docs, metas, listing_ids):
     context += f"Review: {doc.page_content}\n"
+    context += f"Listing ID: {lid}\n"
     context += f"Amenities: {meta['amenities']}\n"
     context += f"Neighborhoods: {meta['neighborhoods']}\n"
     context += f"Price Level: {meta['price_levels']}\n\n"
@@ -110,15 +89,26 @@ def run_agent(query: str):
   docs = vector_store.similarity_search(query, k=1)
   timings['qdrant_search'] = time.time() - t0
   if not docs:
-    return{'answer': "Sorry, I couldn't find any relevant data for that query."}
+    return{'answer': "Sorry, no relevant data found."}
+
+  listing_ids = []
+  for doc in docs:
+    point_id = doc.metadata.get('_id')
+    payload = qdrant_client.retrieve(
+      collection_name='airbnb_reviews',
+      ids=[point_id],
+      with_payload=True,
+      with_vectors=False
+    )[0].payload
+    listing_ids.append(payload.get('listing_id', ''))
 
   # neo4j
   t0 = time.time()
-  metas = [query_neo4j(doc.metadata.get('listing_id')) for doc in docs]
+  metas = [query_neo4j(str(lid)) if lid else {} for lid in listing_ids]
   timings['neo4j_lookup'] = time.time() - t0
 
   # build context
-  context = build_context(docs, metas)
+  context = build_context(docs, metas, listing_ids)
 
   # llm
   t0 = time.time()
@@ -127,6 +117,6 @@ def run_agent(query: str):
 
   print(f"timings: {timings}")
   with open('data/timings.log', 'a') as f:
-    f.write(f"{query}\n step_times: {timings}\n")
+    f.write(f"{query}\ndate: [{datetime.now().isoformat()}] \nstep_times: {timings}\n")
 
   return {'answer': result}
