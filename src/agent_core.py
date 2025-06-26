@@ -31,7 +31,7 @@ vector_store = QdrantVectorStore(
   collection_name='airbnb_reviews',
   embedding=embeddings,
   content_payload_key='text',
-  metadata_payload_key=['listing_id']
+  metadata_payload_key='listing_id'
 )
 
 # llama_model_name = 'meta-llama/Llama-2-7b-hf' #llama7b 1/2
