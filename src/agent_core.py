@@ -42,21 +42,17 @@ llm_pipe = pipeline(
 )
 llm = HuggingFacePipeline(pipeline=llm_pipe)
 
-prompt = PromptTemplate.from_template("""
-You are an assistant helping users find Airbnb listings. \
-Based on the listing information in the context, answer the \
-user's question clearly and concisely.
-
-If the listing doesn't match, say "No relevant listing found."
-
-Context:
-{context}
-
-Question:
-{query}
-
-Answer:
-""")
+prompt = PromptTemplate.from_template(
+  "You are an assistant helping users query Airbnb data.\n"
+  "Use the context to answer the user's question concisely and clearly.\n\n"
+  "-If the user asks for a specific number of items (e.g., top 3 amenities), return **only that number**.\n"
+  "-If the user requests a **listing ID**, include the corresponding ID(s) in your answer.\n"
+  "-If the user asks for a specific location like Lisbon, prioritize matching that.\n"
+  "-If no relevant data is found, reply: 'No relevant data found.'\n\n"
+  "Context:\n{context}\n\n"
+  "User Query:\n{query}\n\n"
+  "Answer:"
+)
 
 chain = LLMChain(llm=llm, prompt=prompt)
 
@@ -73,16 +69,18 @@ def query_neo4j(listing_id: str):
     """, lid=listing_id).single()
     if res:
       return {
+        'listing_id': res['listing_id'],
         'amenities': res['amenities'],
         'neighborhoods': res['neighborhoods'],
         'price_levels': res['price_levels']
       }
     else:
       return {
-      'amenities': [],
-      'neighborhoods': [],
-      'price_levels': []
-    }
+        'listing_id': listing_id,
+        'amenities': [],
+        'neighborhoods': [],
+        'price_levels': []
+      }
 
 def build_context(docs, metas, listing_ids):
   context = ''
@@ -99,7 +97,7 @@ def run_agent(query: str):
 
   # qdrant
   t0 = time.time()
-  docs = vector_store.similarity_search(query, k=3)
+  docs = vector_store.similarity_search(query, k=1)
   timings['qdrant_search'] = time.time() - t0
   if not docs:
     return{'answer': "Sorry, no relevant data found."}
