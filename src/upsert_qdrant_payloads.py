@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient
 import pandas as pd
-# from qdrant_client.http import models as qdrant_models
+from qdrant_client.http import models as qdrant_models
 from tqdm import tqdm
 from pathlib import Path
 # 39288 docs upserted
@@ -21,20 +21,46 @@ if STATE_PATH.exists():
 
 for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
   batch = df.iloc[i:i+BATCH_SIZE]
-  texts = batch['text'].tolist()
-  listing_ids = batch['listing_id'].tolist()
-  point_ids = [int(i + j) for j in range(len(batch))]
+  old_ids = [int(i + j) for j in range(len(batch))]
 
-  for j, point_id in enumerate(point_ids):
-    client.set_payload(
+  retrieved = client.retrieve(
+    collection_name=COLLECTION_NAME,
+    ids = old_ids,
+    with_vectors=True,
+    with_payload=True
+  )
+
+  new_points = []
+  for point in retrieved:
+    listing_id = point.payload.get('listing_id')
+    if listing_id and point.vector:
+      new_points.append(qdrant_models.PointStruct(
+        id=listing_id,
+        vector=point.vector,
+        payload=point.payload
+      ))
+
+  if new_points:
+    client.upsert(
       collection_name=COLLECTION_NAME,
-      payload={
-        'text': texts[j], 'listing_id': listing_ids[j]
-      },
-      points=[point_id]
+      points=new_points
     )
+
+  # upsert text
+  # texts = batch['text'].tolist()
+  # listing_ids = batch['listing_id'].tolist()
+  # point_ids = [int(i + j) for j in range(len(batch))]
+
+  # for j, point_id in enumerate(point_ids):
+  #   client.set_payload(
+  #     collection_name=COLLECTION_NAME,
+  #     payload={
+  #       'text': texts[j], 'listing_id': listing_ids[j]
+  #     },
+  #     points=[point_id]
+  #   )
 
   with open(STATE_PATH, 'w') as f:
     f.write(str(i + BATCH_SIZE))
 
-print('* payload-only upsert to qdrant complete *')
+print('* listing_id upsert to qdrant complete *')
