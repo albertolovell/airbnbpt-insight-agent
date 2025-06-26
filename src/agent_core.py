@@ -105,6 +105,7 @@ def run_agent(query: str):
     return{'answer': "Sorry, no relevant data found."}
 
   listing_ids = []
+  payloads = []
   for doc in docs:
     point_id = doc.metadata.get('_id')
     payload = qdrant_client.retrieve(
@@ -113,7 +114,8 @@ def run_agent(query: str):
       with_payload=True,
       with_vectors=False
     )[0].payload
-    listing_ids.append(payload.get('listing_id', ''))
+    listing_ids.append(payload.get('listing_id'))
+    payloads.append(payload)
 
   # neo4j
   t0 = time.time()
