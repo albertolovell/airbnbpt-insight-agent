@@ -42,9 +42,22 @@ llm_pipe = pipeline(
 )
 llm = HuggingFacePipeline(pipeline=llm_pipe)
 
-prompt = PromptTemplate.from_template(
-  "Context:\n{context}\n\nQuestion:\n{query}\n\nAnswer concisely:\n"
-  )
+prompt = PromptTemplate.from_template("""
+You are an assistant helping users find Airbnb listings. \
+Based on the listing information in the context, answer the \
+user's question clearly and concisely.
+
+If the listing doesn't match, say "No relevant listing found."
+
+Context:
+{context}
+
+Question:
+{query}
+
+Answer:
+""")
+
 chain = LLMChain(llm=llm, prompt=prompt)
 
 def query_neo4j(listing_id: str):
@@ -76,8 +89,8 @@ def build_context(docs, metas, listing_ids):
   for doc, meta, lid in zip(docs, metas, listing_ids):
     context += f"Review: {doc.page_content}\n"
     context += f"Listing ID: {lid}\n"
-    context += f"Amenities: {meta['amenities']}\n"
-    context += f"Neighborhoods: {meta['neighborhoods']}\n"
+    context += f"Amenities: {', '.join(meta['amenities'][:10])}\n"
+    context += f"Neighborhoods: {meta['neighborhoods'][0] if meta['neighborhoods'] else 'N/A'}\n"
     context += f"Price Level: {meta['price_levels']}\n\n"
   return context.strip()
 
@@ -112,11 +125,11 @@ def run_agent(query: str):
 
   # llm
   t0 = time.time()
-  result = chain.run(query=query, context=context)
+  result = chain.invoke({'query': query, 'context': context})
   timings['llm_inference'] = time.time() - t0
 
   print(f"timings: {timings}")
   with open('data/timings.log', 'a') as f:
     f.write(f"{query}\ndate: [{datetime.now().isoformat()}] \nstep_times: {timings}\n")
 
-  return {'answer': result}
+  return {'answer': result.get('text', '').strip()}
