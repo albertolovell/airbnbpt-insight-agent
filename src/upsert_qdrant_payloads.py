@@ -32,12 +32,13 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
 
   new_points = []
   for point in retrieved:
-    listing_id = point.payload.get('listing_id')
-    if listing_id and point.vector:
+    payload = point.payload or {}
+    listing_id = payload.get('listing_id')
+    if listing_id is not None and point.vector is not None:
       new_points.append(qdrant_models.PointStruct(
-        id=listing_id,
+        id=int(listing_id),
         vector=point.vector,
-        payload=point.payload
+        payload=payload
       ))
 
   if new_points:
