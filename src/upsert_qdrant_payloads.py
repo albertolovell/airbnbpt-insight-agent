@@ -32,13 +32,14 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
 
   new_points = []
   for point in retrieved:
-    payload = point.payload or {}
-    listing_id = payload.get('listing_id')
+    original_payload = point.payload or {}
+    listing_id = original_payload.get('listing_id')
     if listing_id is not None and point.vector is not None:
+      wrapped_payload = {'metadata': original_payload}
       new_points.append(qdrant_models.PointStruct(
         id=int(listing_id),
         vector=point.vector,
-        payload=payload
+        payload=wrapped_payload
       ))
 
   if new_points:
@@ -46,6 +47,7 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
       collection_name=COLLECTION_NAME,
       points=new_points
     )
+
 
   # upsert text
   # texts = batch['text'].tolist()
