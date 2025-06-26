@@ -38,7 +38,7 @@ llm_pipe = pipeline(
   'text2text-generation',
   model=model,
   tokenizer=tokenizer,
-  max_new_tokens=128
+  max_new_tokens=512
 )
 llm = HuggingFacePipeline(pipeline=llm_pipe)
 
@@ -99,7 +99,7 @@ def run_agent(query: str):
 
   # qdrant
   t0 = time.time()
-  docs = vector_store.similarity_search(query, k=1)
+  docs = vector_store.similarity_search(query, k=3)
   timings['qdrant_search'] = time.time() - t0
   if not docs:
     return{'answer': "Sorry, no relevant data found."}
