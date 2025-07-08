@@ -176,4 +176,3 @@ cython_debug/
 .DS_Store
 data/
 data/*.parquet
-src/test_harness.py
