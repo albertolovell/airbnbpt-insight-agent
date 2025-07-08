@@ -67,7 +67,7 @@ def query_neo4j(listing_id: str):
         collect(DISTINCT n.name) AS neighborhoods,
         collect(DISTINCT p.level) AS price_levels
     """, lid=listing_id).single()
-    if res:
+    if res and 'listing_id' in res:
       return {
         'listing_id': res['listing_id'],
         'amenities': res['amenities'],
