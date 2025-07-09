@@ -24,15 +24,15 @@ A fullstack Airbnb listing explorer for Portugal. This agentic workflow leverage
 
 ## Run with Docker Compose
 
-### Clone the repo
+### 1. Clone the repo
 ```bash
 git clone https://github.com/albertolovell/airbnbpt-insight-agent.git
 cd airbnbpt-insight-agent
 ```
 
-### Create a .env file at the root (example.env)
+### 2. Create a .env file at the root (example.env)
 
-### Run the full stack with Docker Compose
+### 3. Run the full stack with Docker Compose
 ```bash
 docker-compose up --build
 ```
@@ -43,7 +43,10 @@ This will:
 - serve the react frontend
 
 ### Future Ideas
+- Deeper feature engineering and extraction
 - Add login and personalization
 - Support multiple languages
 - Store past queries for analytics
 - Add map view with coordinates from Neo4J
+
+**Contact me if you would like to implement a similar workflow on your dataset**
