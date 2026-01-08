@@ -5,15 +5,17 @@ from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qdrant_models
 from pathlib import Path
-# 39288 embeddings complete
+# 39288 embeddings complete (original run count)
 
 DATA_PATH = Path('data/processed/review_chunks.parquet')
 STATE_PATH = Path('data/processed/qdrant_checkpoint.txt')
 COLLECTION_NAME = 'airbnb_reviews'
 BATCH_SIZE = 256
+QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
+QDRANT_PORT = int(os.getenv('QDRANT_PORT', '6333'))
 
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-client = QdrantClient(host='localhost', port=6333)
+client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
 if not client.collection_exists(collection_name=COLLECTION_NAME):
   client.create_collection(
@@ -46,7 +48,7 @@ for i in tqdm(range(start_idx, len(df), BATCH_SIZE)):
       qdrant_models.PointStruct(
         id=int(i + j),
         vector=embeddings[j],
-        payload={'listing_id': listing_ids[j]}
+        payload={'listing_id': listing_ids[j], 'text': texts[j]}
       )
       for j in range(len(texts))
     ]

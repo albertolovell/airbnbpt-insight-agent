@@ -3,8 +3,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models as qdrant_models
 
 def main():
-
-  # # one-time cleanup to remove old point ids during embedding
+  # one-time cleanup to remove old point ids during embedding
   # client = QdrantClient(host='localhost', port=6333)
   # old_ids = list(range(0, 39288))
   # client.delete(
@@ -28,7 +27,7 @@ def main():
     'show me one listing in Aveiro'
   ]
 
-# # test qdrant output for listing_id
+# test qdrant output for listing_id
 #   client = QdrantClient(host='localhost', port=6333)
 #   points = client.retrieve(
 #     collection_name='airbnb_reviews',

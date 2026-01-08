@@ -42,12 +42,11 @@ class KGAgentNeo4j:
 
       listings = [record['listing_id'] for record in result]
       session.close()
-      if listings:
-        return (f"listings with pool{' in '+neighborhood if neighborhood else ''}: {listings}")
-      else:
-        return (f"no listings found with pool{' in '+neighborhood if neighborhood else ''}")
-      # add other structured patters for price_level, wifi etc
-
+    if listings:
+      return (f"listings with pool{' in '+neighborhood if neighborhood else ''}: {listings}")
+    else:
+      return (f"no listings found with pool{' in '+neighborhood if neighborhood else ''}")
+    # add other structured patterns for price_level, wifi, etc
     session.close()
     return "I'm not sure how to answer that with structured data"
 

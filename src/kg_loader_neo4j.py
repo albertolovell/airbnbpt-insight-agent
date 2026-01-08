@@ -23,7 +23,7 @@ def clear_neo4j(driver):
     session.run('MATCH (n) DETACH DELETE n')
 
 
-def ingest_metadata_triples(drive, csv_path: Path):
+def ingest_metadata_triples(driver, csv_path: Path):
   """
   Reads metadata_triples.csv (subject,predicate,object) and creates:
     (l:Listing {id: <subject>})
