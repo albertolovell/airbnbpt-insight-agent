@@ -42,6 +42,52 @@ This will:
 - start qdrant
 - serve the react frontend
 
+### 4. Open the UI (Docker)
+Visit `http://localhost:5173` for the Airbnb Portugal clone with the chat window.
+The frontend container proxies `/ask` to the backend service.
+
+---
+
+## Run locally (reproducible)
+This runs Neo4j + Qdrant in Docker and the backend on your host.
+
+### 1. Create a local .env
+```bash
+cp example.env .env
+```
+Set these for local host access:
+```
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=your_username
+NEO4J_PASSWORD=your_secure_password
+QDRANT_HOST=localhost
+QDRANT_PORT=6333
+```
+
+### 2. Start services (Neo4j + Qdrant)
+```bash
+docker-compose up -d neo4j qdrant
+```
+
+### 3. Install backend deps and run API
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn src.agent_api:app --host 0.0.0.0 --port 8000
+```
+
+### 4. Optional: run frontend locally
+```bash
+cd app
+npm install
+npm run dev
+```
+
+### 5. Open the UI
+Visit `http://localhost:5173` for the Airbnb Portugal clone with the chat window.
+The Vite dev server proxies `/ask` to `http://localhost:8000`, so the frontend can call the API without hardcoding the backend URL.
+
 ### Future Ideas
 - Deeper feature engineering and extraction
 - Add login and personalization
