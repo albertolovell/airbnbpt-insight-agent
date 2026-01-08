@@ -14,11 +14,12 @@ load_dotenv()
 NEO4J_URI = os.getenv('NEO4J_URI')
 NEO4J_USER = os.getenv('NEO4J_USER')
 NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
+QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
+QDRANT_PORT = int(os.getenv('QDRANT_PORT', '6333'))
 
-qdrant_client = QdrantClient(host='localhost', port=6333, timeout=60.0)
+qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, timeout=60.0)
 neo4j = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-# embed_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
 
 vector_store = QdrantVectorStore(
@@ -63,16 +64,17 @@ def query_neo4j(listing_id: str):
       OPTIONAL MATCH (l)-[:HAS_AMENITY]->(a:Amenity)
       OPTIONAL MATCH (l)-[:IN_NEIGHBORHOOD]->(n:Neighborhood)
       OPTIONAL MATCH (l)-[:PRICE_LEVEL]->(p:PriceLevel)
-      RETURN collect(DISTINCT a.name) AS amenities,
+      RETURN l.id AS listing_id,
+        collect(DISTINCT a.name) AS amenities,
         collect(DISTINCT n.name) AS neighborhoods,
         collect(DISTINCT p.level) AS price_levels
     """, lid=listing_id).single()
-    if res and 'listing_id' in res:
+    if res:
       return {
-        'listing_id': res['listing_id'],
-        'amenities': res['amenities'],
-        'neighborhoods': res['neighborhoods'],
-        'price_levels': res['price_levels']
+        'listing_id': res.get('listing_id', listing_id),
+        'amenities': res.get('amenities', []),
+        'neighborhoods': res.get('neighborhoods', []),
+        'price_levels': res.get('price_levels', [])
       }
     else:
       return {
@@ -82,14 +84,27 @@ def query_neo4j(listing_id: str):
         'price_levels': []
       }
 
+def extract_listing_id(doc):
+  if not doc.metadata:
+    return None
+  if 'listing_id' in doc.metadata:
+    return doc.metadata.get('listing_id')
+  nested = doc.metadata.get('metadata')
+  if isinstance(nested, dict):
+    return nested.get('listing_id')
+  return None
+
 def build_context(docs, metas, listing_ids):
   context = ''
   for doc, meta, lid in zip(docs, metas, listing_ids):
     context += f"Review: {doc.page_content}\n"
     context += f"Listing ID: {lid}\n"
-    context += f"Amenities: {', '.join(meta['amenities'][:10])}\n"
-    context += f"Neighborhoods: {meta['neighborhoods'][0] if meta['neighborhoods'] else 'N/A'}\n"
-    context += f"Price Level: {meta['price_levels']}\n\n"
+    amenities = meta.get('amenities', [])
+    neighborhoods = meta.get('neighborhoods', [])
+    price_levels = meta.get('price_levels', [])
+    context += f"Amenities: {', '.join(amenities[:10])}\n"
+    context += f"Neighborhoods: {neighborhoods[0] if neighborhoods else 'N/A'}\n"
+    context += f"Price Level: {price_levels}\n\n"
   return context.strip()
 
 def run_agent(query: str):
@@ -103,17 +118,21 @@ def run_agent(query: str):
     return{'answer': "Sorry, no relevant data found."}
 
   listing_ids = []
-  payloads = []
   for doc in docs:
-    point_id = doc.metadata.get('_id')
-    payload = qdrant_client.retrieve(
-      collection_name='airbnb_reviews',
-      ids=[point_id],
-      with_payload=True,
-      with_vectors=False
-    )[0].payload
-    listing_ids.append(payload.get('listing_id'))
-    payloads.append(payload)
+    listing_id = extract_listing_id(doc)
+    if listing_id is None:
+      point_id = None
+      if doc.metadata:
+        point_id = doc.metadata.get('_id') or doc.metadata.get('id')
+      if point_id is not None:
+        payload = qdrant_client.retrieve(
+          collection_name='airbnb_reviews',
+          ids=[point_id],
+          with_payload=True,
+          with_vectors=False
+        )[0].payload or {}
+        listing_id = payload.get('listing_id') or (payload.get('metadata') or {}).get('listing_id')
+    listing_ids.append(listing_id)
 
   # neo4j
   t0 = time.time()
