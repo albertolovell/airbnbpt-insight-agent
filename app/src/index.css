@@ -47,6 +47,113 @@ h4 {
   background: radial-gradient(circle at top left, #f8e6d2 0%, #f5f0e8 55%, #efe6d6 100%);
 }
 
+.theme-dark {
+  color: #f5efe6;
+  background: #12110f;
+}
+
+.theme-dark .bg-shell {
+  background: radial-gradient(circle at top left, #2b231d 0%, #191614 55%, #14110f 100%);
+}
+
+.theme-dark .hero-glow {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255, 140, 92, 0.18), transparent 50%),
+    radial-gradient(circle at 80% 5%, rgba(200, 84, 70, 0.18), transparent 45%),
+    radial-gradient(circle at 90% 80%, rgba(75, 120, 100, 0.15), transparent 40%);
+}
+
+.theme-dark .logo-mark {
+  background: linear-gradient(135deg, #ff7a5a, #b84336);
+}
+
+.theme-dark .pill {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(245, 239, 230, 0.85);
+}
+
+.theme-dark .badge {
+  background: rgba(255, 122, 90, 0.18);
+  color: #ffb59a;
+}
+
+.theme-dark .badge-muted {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 239, 230, 0.7);
+}
+
+.theme-dark .listing-card,
+.theme-dark .stat-card,
+.theme-dark .chat-panel {
+  background: rgba(24, 21, 18, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 70px -55px rgba(0, 0, 0, 0.8);
+}
+
+.theme-dark .listing-art.lisboa {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12), transparent 40%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0 12px, transparent 12px 24px),
+    linear-gradient(135deg, rgba(255, 122, 90, 0.7), rgba(120, 54, 48, 0.75));
+}
+
+.theme-dark .listing-art.porto {
+  background-image:
+    radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.15), transparent 45%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.08) 0 10px, transparent 10px 22px),
+    linear-gradient(135deg, rgba(166, 130, 88, 0.8), rgba(62, 94, 80, 0.8));
+}
+
+.theme-dark .tag {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 239, 230, 0.75);
+}
+
+.theme-dark .status-pill {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 239, 230, 0.75);
+}
+
+.theme-dark .chat-bubble {
+  background: rgba(35, 30, 26, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 239, 230, 0.9);
+}
+
+.theme-dark .chat-bubble-user {
+  background: rgba(255, 122, 90, 0.2);
+  border-color: rgba(255, 122, 90, 0.35);
+}
+
+.theme-dark .chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(245, 239, 230, 0.7);
+}
+
+.theme-dark .chat-input {
+  background: rgba(21, 18, 15, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(245, 239, 230, 0.9);
+}
+
+.theme-dark .send-btn {
+  background: #ff7a5a;
+}
+
+.theme-dark .text-ink-muted {
+  color: rgba(245, 239, 230, 0.6);
+}
+
+.theme-dark .text-ink-subtle {
+  color: rgba(245, 239, 230, 0.75);
+}
+
+.theme-dark .border-sand {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .hero-glow {
   position: absolute;
   inset: 0;

@@ -19,6 +19,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [darkMode, setDarkMode] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-shell text-ink relative overflow-hidden">
+    <div className={`min-h-screen bg-shell text-ink relative overflow-hidden ${darkMode ? 'theme-dark' : ''}`}>
       <div className="hero-glow" aria-hidden="true" />
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-3">
@@ -65,11 +66,21 @@ function App() {
             <h1 className="text-2xl font-semibold">Airbnb Atlas</h1>
           </div>
         </div>
-        <div className="hidden items-center gap-6 text-sm text-ink-subtle md:flex">
-          <span>Lisbon</span>
-          <span>Porto</span>
-          <span>Coastal</span>
-          <button className="pill">Explore map</button>
+        <div className="flex items-center gap-3 text-sm text-ink-subtle">
+          <div className="hidden items-center gap-6 md:flex">
+            <span>Lisbon</span>
+            <span>Porto</span>
+            <span>Coastal</span>
+            <button className="pill">Explore map</button>
+          </div>
+          <button
+            className="pill"
+            type="button"
+            onClick={() => setDarkMode((prev) => !prev)}
+            aria-pressed={darkMode}
+          >
+            {darkMode ? 'Light mode' : 'Dark mode'}
+          </button>
         </div>
       </header>
 
