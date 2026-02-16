@@ -12,7 +12,7 @@ STATE_PATH = Path('data/processed/qdrant_checkpoint.txt')
 COLLECTION_NAME = 'airbnb_reviews'
 BATCH_SIZE = 256
 QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
-QDRANT_PORT = int(os.getenv('QDRANT_PORT', '6333'))
+QDRANT_PORT = int(os.getenv('QDRANT_PORT') or '6333')
 
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)

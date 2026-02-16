@@ -15,7 +15,7 @@ NEO4J_URI = os.getenv('NEO4J_URI')
 NEO4J_USER = os.getenv('NEO4J_USER')
 NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
 QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
-QDRANT_PORT = int(os.getenv('QDRANT_PORT', '6333'))
+QDRANT_PORT = int(os.getenv('QDRANT_PORT') or '6333')
 
 qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, timeout=60.0)
 neo4j = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
