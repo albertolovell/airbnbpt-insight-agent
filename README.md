@@ -31,6 +31,14 @@ cd airbnbpt-insight-agent
 ```
 
 ### 2. Create a .env file at the root (example.env)
+For Docker Compose service-to-service networking, use:
+```
+NEO4J_URI=bolt://neo4j:7687
+NEO4J_USER=your_username
+NEO4J_PASSWORD=your_secure_password
+QDRANT_HOST=qdrant
+QDRANT_PORT=6333
+```
 
 ### 3. Run the full stack with Docker Compose
 ```bash

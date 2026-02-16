@@ -148,6 +148,7 @@ def run_agent(query: str):
   timings['llm_inference'] = time.time() - t0
 
   print(f"timings: {timings}")
+  os.makedirs('data', exist_ok=True)
   with open('data/timings.log', 'a') as f:
     f.write(f"{query}\ndate: [{datetime.now().isoformat()}] \nstep_times: {timings}\n")
 
