@@ -95,6 +95,7 @@ npm run dev
 ### 5. Open the UI
 Visit `http://localhost:5173` for the Airbnb Portugal clone with the chat window.
 The Vite dev server proxies `/ask` to `http://localhost:8000`, so the frontend can call the API without hardcoding the backend URL.
+Use the `Dashboard` toggle in the header to open the analytics view with filters for neighborhood, room type, property type, superhost, price level, and minimum accommodates.
 
 ### Future Ideas
 - Deeper feature engineering and extraction

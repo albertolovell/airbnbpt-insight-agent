@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/ask': process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
+      '/ask': process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000',
+      '/dashboard': process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
     }
   }
 })

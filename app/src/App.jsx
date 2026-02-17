@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import DashboardPanel from './components/DashboardPanel';
 
 const STARTER_PROMPTS = [
   'Best neighborhoods in Lisbon for a quiet stay',
@@ -20,6 +21,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [activeView, setActiveView] = useState('chat');
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -67,6 +69,22 @@ function App() {
           </div>
         </div>
         <div className="flex items-center gap-3 text-sm text-ink-subtle">
+          <div className="view-switch">
+            <button
+              className={`view-btn ${activeView === 'chat' ? 'view-btn-active' : ''}`}
+              type="button"
+              onClick={() => setActiveView('chat')}
+            >
+              Chat
+            </button>
+            <button
+              className={`view-btn ${activeView === 'dashboard' ? 'view-btn-active' : ''}`}
+              type="button"
+              onClick={() => setActiveView('dashboard')}
+            >
+              Dashboard
+            </button>
+          </div>
           <div className="hidden items-center gap-6 md:flex">
             <span>Lisbon</span>
             <span>Porto</span>
@@ -84,6 +102,7 @@ function App() {
         </div>
       </header>
 
+      {activeView === 'chat' ? (
       <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-6 pb-12 md:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-3xl border border-sand bg-white/80 p-6 shadow-soft backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -214,6 +233,11 @@ function App() {
           </div>
         </section>
       </main>
+      ) : (
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-12">
+        <DashboardPanel />
+      </main>
+      )}
     </div>
   );
 }
