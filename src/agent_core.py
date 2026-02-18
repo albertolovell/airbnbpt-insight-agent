@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 import os, time
 import re
+from pathlib import Path
+import pandas as pd
 
 load_dotenv()
 NEO4J_URI = os.getenv('NEO4J_URI')
@@ -60,6 +62,109 @@ prompt = PromptTemplate.from_template(
 )
 
 chain = LLMChain(llm=llm, prompt=prompt)
+_metrics_df = None
+KNOWN_CITIES = [
+  'lisbon', 'porto', 'aveiro', 'cascais', 'sintra', 'vila nova de gaia',
+  'matosinhos', 'oeiras', 'mafra', 'vila do conde'
+]
+
+def _to_float(value):
+  if value is None:
+    return None
+  if isinstance(value, (int, float)):
+    return float(value)
+  if isinstance(value, str):
+    cleaned = value.replace('$', '').replace(',', '').strip()
+    if not cleaned:
+      return None
+    try:
+      return float(cleaned)
+    except ValueError:
+      return None
+  return None
+
+def _normalize_city(value):
+  if value is None or pd.isna(value):
+    return None
+  city = str(value).strip()
+  if not city:
+    return None
+  return city.lower()
+
+def get_metrics_df():
+  global _metrics_df
+  if _metrics_df is not None:
+    return _metrics_df
+
+  data_path = Path(__file__).resolve().parents[1] / 'data' / 'processed' / 'listings.parquet'
+  if not data_path.exists():
+    data_path = Path('data/processed/listings.parquet')
+  cols = ['id', 'price', 'estimated_occupancy_l365d', 'neighbourhood_group_cleansed', 'neighbourhood_cleansed']
+  df = pd.read_parquet(data_path, columns=cols)
+  df['price_num'] = df['price'].apply(_to_float)
+  df['occupancy_num'] = pd.to_numeric(df['estimated_occupancy_l365d'], errors='coerce')
+  df['city_name'] = df['neighbourhood_group_cleansed'].apply(_normalize_city)
+  _metrics_df = df
+  return _metrics_df
+
+def extract_city(query: str):
+  q = query.lower()
+  for city in sorted(KNOWN_CITIES, key=len, reverse=True):
+    if city in q:
+      return city
+  return None
+
+def is_metric_query(query: str):
+  q = query.lower()
+  metric_patterns = [
+    'average price', 'avg price', 'mean price', 'nightly price', 'price per night',
+    'highest cost', 'most expensive', 'max price', 'occupancy', 'occupancy rate'
+  ]
+  return any(p in q for p in metric_patterns)
+
+def answer_metric_query(query: str):
+  df = get_metrics_df()
+  q = query.lower()
+  city = extract_city(query)
+  filtered = df
+  if city:
+    filtered = filtered[filtered['city_name'] == city]
+
+  if filtered.empty:
+    city_part = f" for {city.title()}" if city else ''
+    return {'answer': f"No relevant data found{city_part}."}
+
+  if 'highest cost' in q or 'most expensive' in q or 'max price' in q:
+    priced = filtered.dropna(subset=['price_num'])
+    if priced.empty:
+      return {'answer': 'No relevant data found.'}
+    top = priced.loc[priced['price_num'].idxmax()]
+    city_part = f" in {city.title()}" if city else ''
+    return {
+      'answer': f"Highest nightly price{city_part}: ${top['price_num']:.2f} (listing {int(top['id'])})."
+    }
+
+  if 'occupancy' in q:
+    occ = filtered.dropna(subset=['occupancy_num'])
+    if occ.empty:
+      return {'answer': 'No relevant data found.'}
+    avg_occ = occ['occupancy_num'].mean()
+    city_part = f" in {city.title()}" if city else ''
+    return {
+      'answer': f"Average occupancy rate{city_part}: {avg_occ:.2f}% (n={len(occ)} listings)."
+    }
+
+  if any(p in q for p in ['average price', 'avg price', 'mean price', 'nightly price', 'price per night']):
+    priced = filtered.dropna(subset=['price_num'])
+    if priced.empty:
+      return {'answer': 'No relevant data found.'}
+    avg_price = priced['price_num'].mean()
+    city_part = f" in {city.title()}" if city else ''
+    return {
+      'answer': f"Average nightly price{city_part}: ${avg_price:.2f} (n={len(priced)} listings)."
+    }
+
+  return None
 
 def query_neo4j(listing_id: str):
   with neo4j.session() as session:
@@ -188,6 +293,10 @@ def retrieve_docs(query: str, k: int = 8, min_relevance: float = 0.2):
 
 def run_agent(query: str):
   timings = {}
+
+  metrics_answer = answer_metric_query(query) if is_metric_query(query) else None
+  if metrics_answer is not None:
+    return metrics_answer
 
   # structured fallback for amenity/location-type queries
   structured = query_structured_listings(query)
