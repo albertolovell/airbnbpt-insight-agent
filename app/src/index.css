@@ -8,6 +8,12 @@
   font-family: 'Space Grotesk', system-ui, sans-serif;
   color: #1f1d1b;
   background-color: #f5f0e8;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-strong: rgba(255, 255, 255, 0.92);
+  --ring: rgba(255, 122, 90, 0.28);
+  --border-soft: rgba(31, 29, 27, 0.09);
+  --elev-1: 0 18px 45px -36px rgba(31, 29, 27, 0.45);
+  --elev-2: 0 30px 70px -55px rgba(31, 29, 27, 0.5);
 }
 
 body {
@@ -40,7 +46,7 @@ h4 {
 }
 
 .shadow-soft {
-  box-shadow: 0 30px 70px -55px rgba(31, 29, 27, 0.5);
+  box-shadow: var(--elev-2);
 }
 
 .bg-shell {
@@ -50,6 +56,12 @@ h4 {
 .theme-dark {
   color: #f5efe6;
   background: #12110f;
+  --surface: rgba(24, 21, 18, 0.9);
+  --surface-strong: rgba(24, 21, 18, 0.96);
+  --ring: rgba(255, 158, 127, 0.35);
+  --border-soft: rgba(255, 255, 255, 0.1);
+  --elev-1: 0 22px 46px -34px rgba(0, 0, 0, 0.75);
+  --elev-2: 0 30px 70px -48px rgba(0, 0, 0, 0.85);
 }
 
 .theme-dark .bg-shell {
@@ -200,6 +212,7 @@ h4 {
     radial-gradient(circle at 90% 80%, rgba(106, 145, 108, 0.22), transparent 40%);
   z-index: 0;
   pointer-events: none;
+  filter: saturate(115%);
 }
 
 .logo-mark {
@@ -217,16 +230,24 @@ h4 {
 .pill {
   border-radius: 999px;
   padding: 0.5rem 1.1rem;
-  border: 1px solid rgba(31, 29, 27, 0.1);
-  background: #fff7ef;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-strong);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.pill:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-1);
+  border-color: var(--ring);
 }
 
 .view-switch {
   display: inline-flex;
   border-radius: 999px;
-  border: 1px solid rgba(31, 29, 27, 0.15);
+  border: 1px solid var(--border-soft);
   padding: 0.2rem;
-  background: #fff7ef;
+  background: var(--surface-strong);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
 .view-btn {
@@ -238,6 +259,7 @@ h4 {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: rgba(31, 29, 27, 0.7);
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .view-btn-active {
@@ -262,10 +284,16 @@ h4 {
 
 .listing-card {
   border-radius: 24px;
-  border: 1px solid rgba(31, 29, 27, 0.08);
-  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-strong);
   padding: 18px;
-  box-shadow: 0 18px 40px -35px rgba(31, 29, 27, 0.4);
+  box-shadow: var(--elev-1);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.listing-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elev-2);
 }
 
 .listing-art {
@@ -297,20 +325,22 @@ h4 {
 
 .stat-card {
   border-radius: 20px;
-  border: 1px solid rgba(31, 29, 27, 0.08);
-  background: #fffaf5;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
   padding: 16px;
+  box-shadow: var(--elev-1);
 }
 
 .chat-panel {
   position: relative;
   border-radius: 30px;
-  border: 1px solid rgba(31, 29, 27, 0.08);
-  background: #fffdf9;
-  box-shadow: 0 30px 60px -45px rgba(31, 29, 27, 0.45);
+  border: 1px solid var(--border-soft);
+  background: var(--surface-strong);
+  box-shadow: var(--elev-2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .status-pill {
@@ -327,13 +357,16 @@ h4 {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 140, 120, 0.45) transparent;
 }
 
 .chat-bubble {
   border-radius: 18px;
   padding: 14px 16px;
-  border: 1px solid rgba(31, 29, 27, 0.08);
-  background: #fdf6ef;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  box-shadow: var(--elev-1);
 }
 
 .chat-bubble-user {
@@ -360,11 +393,18 @@ h4 {
 .chat-input {
   flex: 1;
   border-radius: 16px;
-  border: 1px solid rgba(31, 29, 27, 0.15);
+  border: 1px solid var(--border-soft);
   padding: 0.85rem 1rem;
   font-size: 0.95rem;
   resize: none;
-  background: #fffaf4;
+  background: var(--surface-strong);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(255, 122, 90, 0.14);
 }
 
 .send-btn {
@@ -388,6 +428,9 @@ h4 {
 
 .dashboard-panel {
   border-radius: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  backdrop-filter: blur(10px);
 }
 
 .dashboard-filters {
@@ -412,17 +455,26 @@ h4 {
 .filter-field select,
 .filter-field input {
   border-radius: 12px;
-  border: 1px solid rgba(31, 29, 27, 0.14);
+  border: 1px solid var(--border-soft);
   padding: 0.65rem 0.75rem;
   font-size: 0.9rem;
-  background: #fffaf5;
+  background: var(--surface-strong);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.filter-field select:focus,
+.filter-field input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px rgba(255, 122, 90, 0.12);
 }
 
 .metric-card {
   border-radius: 18px;
-  border: 1px solid rgba(31, 29, 27, 0.08);
-  background: #fffaf5;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-strong);
   padding: 14px;
+  box-shadow: var(--elev-1);
 }
 
 .metric-label {
@@ -440,9 +492,10 @@ h4 {
 
 .table-card {
   border-radius: 18px;
-  border: 1px solid rgba(31, 29, 27, 0.08);
-  background: #fffaf5;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-strong);
   padding: 16px;
+  box-shadow: var(--elev-1);
 }
 
 .row-item {
@@ -451,9 +504,15 @@ h4 {
   align-items: center;
   gap: 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(31, 29, 27, 0.06);
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--border-soft);
   padding: 10px 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.row-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-1);
 }
 
 .row-title {
