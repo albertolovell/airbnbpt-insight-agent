@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi import Query
+from fastapi import BackgroundTasks
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import pandas as pd
+import threading
+from datetime import datetime, timezone
+from src.update_listings import run_full_update
 
 app = FastAPI()
 
@@ -21,6 +25,12 @@ class QueryRequest(BaseModel):
 _agent_runner = None
 _dashboard_df = None
 _dashboard_options = None
+_update_lock = threading.Lock()
+_update_state = {
+  'status': 'idle',
+  'message': 'idle',
+  'last_success_at': None
+}
 
 
 def _to_float(value):
@@ -122,6 +132,47 @@ async def ask_agent(req: QueryRequest):
   agent_runner = get_agent_runner()
   result = agent_runner(req.query)
   return result
+
+
+def _run_update_job():
+  global _update_state
+  try:
+    result = run_full_update()
+    with _update_lock:
+      last_success_at = _update_state.get('last_success_at')
+      if result.get('status') == 'completed':
+        last_success_at = datetime.now(timezone.utc).isoformat()
+      _update_state = {
+        'status': result.get('status', 'completed'),
+        'message': result.get('message', 'database update completed'),
+        'downloaded_pairs': result.get('downloaded_pairs', 0),
+        'last_success_at': last_success_at
+      }
+  except Exception as exc:
+    with _update_lock:
+      _update_state = {
+        'status': 'error',
+        'message': f'update failed: {exc}',
+        'last_success_at': _update_state.get('last_success_at')
+      }
+
+
+@app.post('/update-listings')
+async def update_listings(background_tasks: BackgroundTasks):
+  global _update_state
+  with _update_lock:
+    current_status = _update_state.get('status')
+    if current_status == 'pending':
+      return {'status': 'pending', 'message': 'database update pending'}
+    _update_state = {'status': 'pending', 'message': 'database update pending'}
+  background_tasks.add_task(_run_update_job)
+  return {'status': 'pending', 'message': 'database update pending'}
+
+
+@app.get('/update-listings/status')
+async def update_listings_status():
+  with _update_lock:
+    return dict(_update_state)
 
 
 @app.get('/dashboard')

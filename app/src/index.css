@@ -203,6 +203,15 @@ h4 {
   color: #fff;
 }
 
+.theme-dark .modal-card {
+  background: var(--surface-strong);
+  border-color: var(--border-soft);
+}
+
+.theme-dark .update-stamp {
+  color: rgba(245, 239, 230, 0.52);
+}
+
 .hero-glow {
   position: absolute;
   inset: 0;
@@ -239,6 +248,21 @@ h4 {
   transform: translateY(-1px);
   box-shadow: var(--elev-1);
   border-color: var(--ring);
+}
+
+.pill:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.update-stamp {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(31, 29, 27, 0.46);
+  white-space: nowrap;
 }
 
 .view-switch {
@@ -538,6 +562,25 @@ h4 {
   font-size: 0.9rem;
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(31, 29, 27, 0.36);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.modal-card {
+  width: min(460px, 100%);
+  border-radius: 18px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-strong);
+  box-shadow: var(--elev-2);
+  padding: 18px;
+}
+
 .trend-chart {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
@@ -599,6 +642,10 @@ h4 {
   .pill {
     padding: 0.42rem 0.85rem;
     font-size: 0.75rem;
+  }
+
+  .update-stamp {
+    display: none;
   }
 
   .chat-panel {

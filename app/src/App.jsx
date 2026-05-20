@@ -22,11 +22,56 @@ function App() {
   const [error, setError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const [activeView, setActiveView] = useState('chat');
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState({ status: 'idle', message: '' });
+  const [lastSuccessAt, setLastSuccessAt] = useState(null);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (!updateModalOpen) return undefined;
+    if (updateStatus.status !== 'pending') return undefined;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await axios.get('/update-listings/status');
+        const payload = res.data || {};
+        setUpdateStatus({
+          status: payload.status || 'idle',
+          message: payload.message || ''
+        });
+        if (payload.last_success_at) {
+          setLastSuccessAt(payload.last_success_at);
+        }
+      } catch (err) {
+        console.error(err);
+        setUpdateStatus({
+          status: 'error',
+          message: 'Unable to fetch update status.'
+        });
+      }
+    }, 2500);
+
+    return () => clearInterval(intervalId);
+  }, [updateModalOpen, updateStatus.status]);
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const res = await axios.get('/update-listings/status');
+        const payload = res.data || {};
+        if (payload.last_success_at) {
+          setLastSuccessAt(payload.last_success_at);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadStatus();
+  }, []);
 
   const sendMessage = async (content) => {
     if (!content.trim() || loading) return;
@@ -56,6 +101,32 @@ function App() {
     event.preventDefault();
     sendMessage(query);
   };
+
+  const handleUpdateListings = async () => {
+    setUpdateModalOpen(true);
+    setUpdateStatus({ status: 'pending', message: 'database update pending' });
+    try {
+      const res = await axios.post('/update-listings');
+      const payload = res.data || {};
+      setUpdateStatus({
+        status: payload.status || 'pending',
+        message: payload.message || 'database update pending'
+      });
+      if (payload.last_success_at) {
+        setLastSuccessAt(payload.last_success_at);
+      }
+    } catch (err) {
+      console.error(err);
+      setUpdateStatus({
+        status: 'error',
+        message: 'Unable to start listings update.'
+      });
+    }
+  };
+
+  const lastUpdatedLabel = lastSuccessAt
+    ? new Date(lastSuccessAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+    : 'never';
 
   return (
     <div className={`min-h-screen bg-shell text-ink relative overflow-hidden ${darkMode ? 'theme-dark' : ''}`}>
@@ -99,6 +170,12 @@ function App() {
           >
             {darkMode ? 'Light mode' : 'Dark mode'}
           </button>
+          <button className="pill" type="button" onClick={handleUpdateListings}>
+            Update listings
+          </button>
+          <span className="update-stamp" aria-live="polite">
+            Last updated: {lastUpdatedLabel}
+          </span>
         </div>
       </header>
 
@@ -237,6 +314,30 @@ function App() {
       <main className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-12">
         <DashboardPanel />
       </main>
+      )}
+
+      {updateModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <h3 className="text-xl font-semibold">Listings update</h3>
+            <p className="mt-2 text-sm text-ink-subtle">
+              {updateStatus.status === 'up_to_date' ? 'already up to date' : updateStatus.message}
+            </p>
+            {updateStatus.status === 'pending' && (
+              <p className="mt-2 text-xs text-ink-muted">database update pending</p>
+            )}
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                className="pill"
+                onClick={() => setUpdateModalOpen(false)}
+                disabled={updateStatus.status === 'pending'}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

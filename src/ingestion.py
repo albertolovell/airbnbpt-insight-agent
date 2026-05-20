@@ -12,12 +12,10 @@ PROCESSED_DIR = BASE_DIR / 'data' / 'processed'
 TEMP_DIR = BASE_DIR / 'data' / 'temp'
 
 LISTING_PATTERNS = [
-  'lisbon_listings_*.csv',
-  'porto_listings_*.csv'
+  '*_listings_*.csv'
 ]
 REVIEW_PATTERNS = [
-  'lisbon_reviews_*.csv',
-  'porto_reviews_*.csv'
+  '*_reviews_*.csv'
 ]
 
 CHUNK_SIZE = 1000

@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/ask': process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000',
-      '/dashboard': process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
+      '/dashboard': process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000',
+      '/update-listings': process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
     }
   }
 })

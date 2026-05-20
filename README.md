@@ -96,6 +96,15 @@ npm run dev
 Visit `http://localhost:5173` for the Airbnb Portugal clone with the chat window.
 The Vite dev server proxies `/ask` to `http://localhost:8000`, so the frontend can call the API without hardcoding the backend URL.
 Use the `Dashboard` toggle in the header to open the analytics view with filters for neighborhood, room type, property type, superhost, price level, and minimum accommodates.
+Use the `Update listings` button in the header to:
+- fetch latest Portugal city datasets from Inside Airbnb
+- ingest and rebuild processed files
+- refresh Neo4j and Qdrant data
+
+Update status modal states:
+- `database update pending` while processing is running
+- `already up to date` if no new files are available
+- `database update completed` when refresh finishes
 
 ### Future Ideas
 - Deeper feature engineering and extraction
