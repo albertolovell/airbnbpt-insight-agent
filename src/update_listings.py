@@ -1,8 +1,10 @@
 import gzip
+import json
 import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -19,6 +21,7 @@ CHECKPOINT_FILES = [
   PROCESSED_DIR / 'qdrant_payload_checkpoint.txt',
 ]
 GET_DATA_URL = 'https://insideairbnb.com/get-the-data/'
+SNAPSHOT_MANIFEST_PATH = PROCESSED_DIR / 'source_snapshot_manifest.json'
 
 
 def _slugify_city(city_value: str) -> str:
@@ -83,6 +86,27 @@ def discover_portugal_pairs():
   return pairs
 
 
+def latest_snapshot_by_city():
+  pairs = discover_portugal_pairs()
+  latest = {}
+  for entry in pairs:
+    city = entry['city_slug']
+    date_text = entry['date']
+    try:
+      parsed = datetime.strptime(date_text, '%Y-%m-%d')
+    except ValueError:
+      parsed = datetime.min
+    existing = latest.get(city)
+    if existing is None or parsed > existing['_parsed_date']:
+      latest[city] = {
+        **entry,
+        '_parsed_date': parsed
+      }
+  for city in list(latest.keys()):
+    latest[city].pop('_parsed_date', None)
+  return latest
+
+
 def _download_and_extract_gzip(url: str, destination_csv: Path):
   tmp_gz = destination_csv.with_suffix(destination_csv.suffix + '.gz')
   with requests.get(url, stream=True, timeout=120) as response:
@@ -96,22 +120,62 @@ def _download_and_extract_gzip(url: str, destination_csv: Path):
   tmp_gz.unlink(missing_ok=True)
 
 
-def download_new_portugal_files():
+def _expected_snapshot_manifest(snapshot_by_city):
+  return {
+    city: {
+      'date': info['date'],
+      'listings_url': info['listings_url'],
+      'reviews_url': info['reviews_url']
+    }
+    for city, info in snapshot_by_city.items()
+  }
+
+
+def _load_snapshot_manifest():
+  if not SNAPSHOT_MANIFEST_PATH.exists():
+    return {}
+  try:
+    with open(SNAPSHOT_MANIFEST_PATH, 'r', encoding='utf-8') as f:
+      return json.load(f)
+  except Exception:
+    return {}
+
+
+def _save_snapshot_manifest(manifest):
+  PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+  with open(SNAPSHOT_MANIFEST_PATH, 'w', encoding='utf-8') as f:
+    json.dump(manifest, f, indent=2, sort_keys=True)
+
+
+def sync_latest_portugal_files(snapshot_by_city):
   RAW_DIR.mkdir(parents=True, exist_ok=True)
-  pairs = discover_portugal_pairs()
   downloaded = []
-  for entry in pairs:
+  expected_files = set()
+
+  for city_slug, entry in snapshot_by_city.items():
     listings_name = f"{entry['city_slug']}_listings_{entry['date']}.csv"
     reviews_name = f"{entry['city_slug']}_reviews_{entry['date']}.csv"
     listings_path = RAW_DIR / listings_name
     reviews_path = RAW_DIR / reviews_name
-    if listings_path.exists() and reviews_path.exists():
-      continue
+    expected_files.add(listings_name)
+    expected_files.add(reviews_name)
+
     if not listings_path.exists():
       _download_and_extract_gzip(entry['listings_url'], listings_path)
+      downloaded.append(listings_name)
     if not reviews_path.exists():
       _download_and_extract_gzip(entry['reviews_url'], reviews_path)
-    downloaded.append((listings_name, reviews_name))
+      downloaded.append(reviews_name)
+
+  # Remove older redundant snapshots for cities in the latest set.
+  for city_slug in snapshot_by_city.keys():
+    for obsolete in RAW_DIR.glob(f'{city_slug}_listings_*.csv'):
+      if obsolete.name not in expected_files:
+        obsolete.unlink(missing_ok=True)
+    for obsolete in RAW_DIR.glob(f'{city_slug}_reviews_*.csv'):
+      if obsolete.name not in expected_files:
+        obsolete.unlink(missing_ok=True)
+
   return downloaded
 
 
@@ -172,8 +236,12 @@ def _reset_qdrant_checkpoints():
 
 
 def run_full_update():
-  downloaded = download_new_portugal_files()
-  if not downloaded:
+  latest_snapshot = latest_snapshot_by_city()
+  expected_manifest = _expected_snapshot_manifest(latest_snapshot)
+  prior_manifest = _load_snapshot_manifest()
+  downloaded = sync_latest_portugal_files(latest_snapshot)
+
+  if expected_manifest == prior_manifest and not downloaded:
     return {'status': 'up_to_date', 'message': 'already up to date', 'downloaded_pairs': 0}
 
   _reset_qdrant_checkpoints()
@@ -181,11 +249,12 @@ def run_full_update():
   build_metadata_triples()
   _run_python_script('kg_loader_neo4j.py')
   _run_python_script('embed_qdrant.py')
+  _save_snapshot_manifest(expected_manifest)
 
   return {
     'status': 'completed',
     'message': 'database update completed',
-    'downloaded_pairs': len(downloaded),
+    'downloaded_pairs': len(downloaded) // 2 if downloaded else 0,
   }
 
 

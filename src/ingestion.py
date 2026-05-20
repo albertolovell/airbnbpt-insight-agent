@@ -2,7 +2,6 @@ import os
 import glob
 import pandas as pd
 from pathlib import Path
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # create listings metadata csv for neo4j
 
@@ -37,16 +36,23 @@ def concat_csvs(file_list, usecols=None, dtype=None):
   return combined
 
 def chunk_reviews(df_reviews: pd.DataFrame):
-  splitter = RecursiveCharacterTextSplitter(
-    chunk_size=CHUNK_SIZE,
-    chunk_overlap=OVERLAP)
   rows = []
   for idx, row in df_reviews.iterrows():
     listing_id = row['listing_id']
     review_id = row['id']
     text = row['comments']
 
-    for i, chunk in enumerate(splitter.split_text(text)):
+    text_value = str(text) if text is not None else ''
+    if not text_value.strip():
+      continue
+    step = max(CHUNK_SIZE - OVERLAP, 1)
+    chunks = []
+    for start in range(0, len(text_value), step):
+      chunk = text_value[start:start + CHUNK_SIZE]
+      if chunk:
+        chunks.append(chunk)
+
+    for i, chunk in enumerate(chunks):
       rows.append({
         'listing_id': listing_id,
         'chunk_id': f"{review_id}_{i}",
