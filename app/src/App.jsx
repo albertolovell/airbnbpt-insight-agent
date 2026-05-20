@@ -20,7 +20,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [activeView, setActiveView] = useState('chat');
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState({ status: 'idle', message: '' });
