@@ -319,10 +319,20 @@ function App() {
       {updateModalOpen && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-card">
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => setUpdateModalOpen(false)}
+              aria-label="Close update status modal"
+            >
+              ×
+            </button>
             <h3 className="text-xl font-semibold">Listings update</h3>
-            <p className="mt-2 text-sm text-ink-subtle">
-              {updateStatus.status === 'up_to_date' ? 'already up to date' : updateStatus.message}
-            </p>
+            <div className="modal-content-scroll mt-2">
+              <p className="text-sm text-ink-subtle">
+                {updateStatus.status === 'up_to_date' ? 'already up to date' : updateStatus.message}
+              </p>
+            </div>
             {updateStatus.status === 'pending' && (
               <p className="mt-2 text-xs text-ink-muted">database update pending</p>
             )}
@@ -331,7 +341,6 @@ function App() {
                 type="button"
                 className="pill"
                 onClick={() => setUpdateModalOpen(false)}
-                disabled={updateStatus.status === 'pending'}
               >
                 Close
               </button>

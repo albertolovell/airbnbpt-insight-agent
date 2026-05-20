@@ -1,5 +1,6 @@
 import gzip
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -100,6 +101,35 @@ def latest_snapshot_by_city():
     if existing is None or parsed > existing['_parsed_date']:
       latest[city] = {
         **entry,
+        '_parsed_date': parsed
+      }
+  for city in list(latest.keys()):
+    latest[city].pop('_parsed_date', None)
+  return latest
+
+
+def local_latest_snapshot_by_city():
+  latest = {}
+  for listings_file in RAW_DIR.glob('*_listings_*.csv'):
+    match = re.match(r'^(?P<city>.+)_listings_(?P<date>\d{4}-\d{2}-\d{2})\.csv$', listings_file.name)
+    if not match:
+      continue
+    city_slug = match.group('city')
+    date_text = match.group('date')
+    reviews_file = RAW_DIR / f'{city_slug}_reviews_{date_text}.csv'
+    if not reviews_file.exists():
+      continue
+    try:
+      parsed = datetime.strptime(date_text, '%Y-%m-%d')
+    except ValueError:
+      parsed = datetime.min
+    existing = latest.get(city_slug)
+    if existing is None or parsed > existing['_parsed_date']:
+      latest[city_slug] = {
+        'city_slug': city_slug,
+        'date': date_text,
+        'listings_url': 'local',
+        'reviews_url': 'local',
         '_parsed_date': parsed
       }
   for city in list(latest.keys()):
@@ -225,9 +255,20 @@ def _run_python_script(script_name: str):
   script_path = BASE_DIR / 'src' / script_name
   venv_python = BASE_DIR / 'venv' / 'bin' / 'python'
   python_bin = str(venv_python) if venv_python.exists() else sys.executable
+  env = os.environ.copy()
+  env.setdefault('NEO4J_URI', 'bolt://localhost:7687')
+  env.setdefault('QDRANT_HOST', 'localhost')
+  env.setdefault('QDRANT_PORT', '6333')
   cmd = [python_bin, str(script_path)]
-  result = subprocess.run(cmd, cwd=BASE_DIR, capture_output=True, text=True)
+  result = subprocess.run(cmd, cwd=BASE_DIR, capture_output=True, text=True, env=env)
   if result.returncode != 0:
+    combined = f"{result.stdout}\n{result.stderr}".lower()
+    if script_name == 'kg_loader_neo4j.py' and ('connection refused' in combined or 'serviceunavailable' in combined):
+      neo4j_uri = env.get('NEO4J_URI', 'bolt://localhost:7687')
+      raise RuntimeError(
+        f"kg_loader_neo4j.py failed: Neo4j is not reachable at {neo4j_uri}. "
+        "Start Neo4j and verify bolt port 7687."
+      )
     raise RuntimeError(f"{script_name} failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
 
 
@@ -238,13 +279,25 @@ def _reset_qdrant_checkpoints():
 
 
 def run_full_update():
-  latest_snapshot = latest_snapshot_by_city()
+  RAW_DIR.mkdir(parents=True, exist_ok=True)
+  latest_snapshot = local_latest_snapshot_by_city()
+  downloaded = []
+
+  # Only fetch from remote when local raw files are missing.
+  if not latest_snapshot:
+    remote_snapshot = latest_snapshot_by_city()
+    downloaded = sync_latest_portugal_files(remote_snapshot)
+    latest_snapshot = local_latest_snapshot_by_city()
+
+  if not latest_snapshot:
+    return {'status': 'error', 'message': 'No local raw files found and no remote files downloaded.'}
+
   expected_manifest = _expected_snapshot_manifest(latest_snapshot)
   prior_manifest = _load_snapshot_manifest()
-  downloaded = sync_latest_portugal_files(latest_snapshot)
-
   if expected_manifest == prior_manifest and not downloaded:
-    return {'status': 'up_to_date', 'message': 'already up to date', 'downloaded_pairs': 0}
+    status_message = 'already up to date'
+  else:
+    status_message = 'database update completed'
 
   _reset_qdrant_checkpoints()
   _run_python_script('ingestion.py')
@@ -254,8 +307,8 @@ def run_full_update():
   _save_snapshot_manifest(expected_manifest)
 
   return {
-    'status': 'completed',
-    'message': 'database update completed',
+    'status': 'completed' if status_message != 'already up to date' else 'up_to_date',
+    'message': status_message,
     'downloaded_pairs': len(downloaded) // 2 if downloaded else 0,
   }
 

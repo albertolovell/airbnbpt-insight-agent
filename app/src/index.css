@@ -573,12 +573,38 @@ h4 {
 }
 
 .modal-card {
+  position: relative;
   width: min(460px, 100%);
   border-radius: 18px;
   border: 1px solid var(--border-soft);
   background: var(--surface-strong);
   box-shadow: var(--elev-2);
   padding: 18px;
+  max-height: min(80vh, 640px);
+  overflow: hidden;
+}
+
+.modal-content-scroll {
+  max-height: min(42vh, 320px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: inherit;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  line-height: 1;
+  font-size: 1.2rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
 
 .trend-chart {
