@@ -104,7 +104,7 @@ function App() {
 
       {activeView === 'chat' ? (
       <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-6 pb-12 md:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl border border-sand bg-white/80 p-6 shadow-soft backdrop-blur">
+        <section className="order-2 rounded-3xl border border-sand bg-white/80 p-6 shadow-soft backdrop-blur md:order-1">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-ink-muted">Featured stays</p>
@@ -170,7 +170,7 @@ function App() {
           </div>
         </section>
 
-        <section className="chat-panel">
+        <section className="chat-panel order-1 md:order-2">
           <div className="flex items-center justify-between border-b border-sand px-6 py-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-ink-muted">Ask the agent</p>
@@ -200,7 +200,7 @@ function App() {
             <div ref={chatEndRef} />
           </div>
 
-          <div className="px-6 pb-5 pt-4">
+          <div className="chat-composer px-6 pb-5 pt-4">
             {error && <p className="mb-2 text-sm text-rose-500">{error}</p>}
             <div className="flex flex-wrap gap-2 pb-3">
               {STARTER_PROMPTS.map((prompt) => (

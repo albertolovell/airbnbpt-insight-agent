@@ -343,6 +343,14 @@ h4 {
   backdrop-filter: blur(10px);
 }
 
+.chat-composer {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface-strong);
+  border-top: 1px solid var(--border-soft);
+  z-index: 4;
+}
+
 .status-pill {
   border-radius: 999px;
   padding: 0.25rem 0.9rem;
@@ -568,8 +576,86 @@ h4 {
 }
 
 @media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    line-height: 1.1;
+  }
+
   .hero-glow {
     opacity: 0.7;
+  }
+
+  .logo-mark {
+    height: 38px;
+    width: 38px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+  }
+
+  .pill {
+    padding: 0.42rem 0.85rem;
+    font-size: 0.75rem;
+  }
+
+  .chat-panel {
+    min-height: 74vh;
+    max-height: 74vh;
+    border-radius: 24px;
+  }
+
+  .chat-body {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .chat-bubble {
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+
+  .chat-input {
+    min-height: 66px;
+    padding: 0.72rem 0.82rem;
+    font-size: 0.92rem;
+  }
+
+  .send-btn {
+    padding: 0.74rem 0.95rem;
+    border-radius: 12px;
+  }
+
+  .chip {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    padding: 0.26rem 0.56rem;
+  }
+
+  .chat-composer {
+    padding: 10px 14px 12px;
+  }
+
+  .listing-card {
+    border-radius: 18px;
+    padding: 14px;
+  }
+
+  .listing-art {
+    height: 118px;
+    border-radius: 14px;
+  }
+
+  .stat-card {
+    border-radius: 14px;
+    padding: 12px;
+  }
+
+  .metric-card,
+  .table-card {
+    border-radius: 14px;
   }
 
   .dashboard-filters {
