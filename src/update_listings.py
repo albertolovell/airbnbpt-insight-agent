@@ -223,7 +223,9 @@ def build_metadata_triples():
 
 def _run_python_script(script_name: str):
   script_path = BASE_DIR / 'src' / script_name
-  cmd = [sys.executable, str(script_path)]
+  venv_python = BASE_DIR / 'venv' / 'bin' / 'python'
+  python_bin = str(venv_python) if venv_python.exists() else sys.executable
+  cmd = [python_bin, str(script_path)]
   result = subprocess.run(cmd, cwd=BASE_DIR, capture_output=True, text=True)
   if result.returncode != 0:
     raise RuntimeError(f"{script_name} failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
