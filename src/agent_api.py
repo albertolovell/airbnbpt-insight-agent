@@ -87,7 +87,7 @@ def get_dashboard_df():
   cols = [
     'id', 'neighbourhood_group_cleansed', 'neighbourhood_cleansed', 'room_type', 'property_type', 'price',
     'availability_365', 'estimated_occupancy_l365d', 'estimated_revenue_l365d',
-    'reviews_per_month', 'review_scores_rating', 'accommodates', 'host_is_superhost',
+    'reviews_per_month', 'review_scores_rating', 'accommodates', 'host_is_superhost', 'bedrooms', 'beds',
     'first_review', 'last_review', 'number_of_reviews_l30d', 'number_of_reviews_ltm'
   ]
   df = pd.read_parquet(data_path, columns=cols)
@@ -98,6 +98,8 @@ def get_dashboard_df():
   df['reviews_pm_num'] = pd.to_numeric(df['reviews_per_month'], errors='coerce')
   df['rating_num'] = pd.to_numeric(df['review_scores_rating'], errors='coerce')
   df['accommodates_num'] = pd.to_numeric(df['accommodates'], errors='coerce')
+  df['bedrooms_num'] = pd.to_numeric(df['bedrooms'], errors='coerce')
+  df['beds_num'] = pd.to_numeric(df['beds'], errors='coerce')
   df['reviews_l30d_num'] = pd.to_numeric(df['number_of_reviews_l30d'], errors='coerce')
   df['reviews_ltm_num'] = pd.to_numeric(df['number_of_reviews_ltm'], errors='coerce')
   df['superhost_bool'] = df['host_is_superhost'].astype(str).str.lower().isin(['t', 'true', '1', 'yes'])
@@ -182,7 +184,9 @@ async def dashboard_data(
   property_type: str = Query(default='all'),
   superhost: str = Query(default='all'),
   price_level: str = Query(default='all'),
-  min_accommodates: int = Query(default=1, ge=1)
+  min_accommodates: int = Query(default=1, ge=1),
+  min_bedrooms: int = Query(default=0, ge=0),
+  min_beds: int = Query(default=0, ge=0)
 ):
   df, options = get_dashboard_df()
   filtered = df.copy()
@@ -201,21 +205,31 @@ async def dashboard_data(
     filtered = filtered[filtered['superhost_bool'] == False]
   if min_accommodates > 1:
     filtered = filtered[filtered['accommodates_num'] >= min_accommodates]
+  if min_bedrooms > 0:
+    filtered = filtered[filtered['bedrooms_num'] >= min_bedrooms]
+  if min_beds > 0:
+    filtered = filtered[filtered['beds_num'] >= min_beds]
 
   metrics = {
     'listing_count': int(len(filtered)),
     'avg_price': _round_or_none(filtered['price_num'].mean()),
+    'median_price': _round_or_none(filtered['price_num'].median()),
     'avg_occupancy_pct': _round_or_none(filtered['occupancy_num'].mean()),
     'avg_availability_days': _round_or_none(filtered['availability_num'].mean()),
     'avg_revenue_l365d': _round_or_none(filtered['revenue_num'].mean()),
     'avg_reviews_per_month': _round_or_none(filtered['reviews_pm_num'].mean()),
-    'avg_rating': _round_or_none(filtered['rating_num'].mean())
+    'avg_rating': _round_or_none(filtered['rating_num'].mean()),
+    'superhost_share_pct': _round_or_none(filtered['superhost_bool'].mean() * 100 if len(filtered) else None),
+    'avg_bedrooms': _round_or_none(filtered['bedrooms_num'].mean()),
+    'avg_beds': _round_or_none(filtered['beds_num'].mean())
   }
 
   if filtered.empty:
     city_breakdown = []
     room_type_breakdown = []
     time_series = []
+    occupancy_band_chart = []
+    room_type_metric_chart = []
   else:
     city_group = (
       filtered.groupby('city_name', dropna=True)
@@ -260,6 +274,16 @@ async def dashboard_data(
       for _, row in room_group.iterrows()
     ]
 
+    room_type_metric_chart = [
+      {
+        'label': row['room_type'],
+        'avg_price': _round_or_none(row['avg_price']),
+        'avg_occupancy_pct': _round_or_none(row['avg_occupancy_pct']),
+        'listing_count': int(row['listing_count'])
+      }
+      for _, row in room_group.iterrows()
+    ]
+
     monthly = (
       filtered.dropna(subset=['last_review_month'])
       .groupby('last_review_month')
@@ -286,6 +310,19 @@ async def dashboard_data(
       for _, row in monthly.iterrows()
     ]
 
+    occ = filtered['occupancy_num'].dropna()
+    if not occ.empty:
+      bins = [0, 20, 40, 60, 80, 100]
+      labels = ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%']
+      bands = pd.cut(occ.clip(lower=0, upper=100), bins=bins, labels=labels, include_lowest=True)
+      band_counts = bands.value_counts().reindex(labels, fill_value=0)
+      occupancy_band_chart = [
+        {'band': label, 'count': int(band_counts[label])}
+        for label in labels
+      ]
+    else:
+      occupancy_band_chart = []
+
   return {
     'applied_filters': {
       'city': city,
@@ -293,11 +330,15 @@ async def dashboard_data(
       'property_type': property_type,
       'superhost': superhost,
       'price_level': price_level,
-      'min_accommodates': min_accommodates
+      'min_accommodates': min_accommodates,
+      'min_bedrooms': min_bedrooms,
+      'min_beds': min_beds
     },
     'metrics': metrics,
     'time_series': time_series,
     'city_breakdown': city_breakdown,
     'room_type_breakdown': room_type_breakdown,
+    'room_type_metric_chart': room_type_metric_chart,
+    'occupancy_band_chart': occupancy_band_chart,
     'options': options
   }
