@@ -151,7 +151,7 @@ h4 {
 }
 
 .theme-dark .send-btn {
-  background: #ff7a5a;
+  background: #2a2a2f;
 }
 
 .theme-dark .text-ink-muted {
@@ -174,7 +174,7 @@ h4 {
 }
 
 .theme-dark .trend-bar {
-  background: linear-gradient(180deg, #ff9e7f 0%, #c25749 100%);
+  background: linear-gradient(180deg, #a7a7ad 0%, #66666d 100%);
 }
 
 .theme-dark .trend-label,
@@ -417,7 +417,7 @@ h4 {
 
 .chat-bubble-agent {
   align-self: flex-start;
-  background: #fff8f0;
+  background: #f6f6f7;
 }
 
 .chip {

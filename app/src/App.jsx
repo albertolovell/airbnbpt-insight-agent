@@ -21,7 +21,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [darkMode, setDarkMode] = useState(true);
-  const [activeView, setActiveView] = useState('chat');
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState({ status: 'idle', message: '' });
   const [lastSuccessAt, setLastSuccessAt] = useState(null);
@@ -131,7 +130,7 @@ function App() {
   return (
     <div className={`min-h-screen bg-shell text-ink relative overflow-hidden ${darkMode ? 'theme-dark' : ''}`}>
       <div className="hero-glow" aria-hidden="true" />
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
+      <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-5 md:px-8 md:py-6">
         <div className="flex items-center gap-3">
           <div className="logo-mark">AP</div>
           <div>
@@ -140,28 +139,6 @@ function App() {
           </div>
         </div>
         <div className="flex items-center gap-3 text-sm text-ink-subtle">
-          <div className="view-switch">
-            <button
-              className={`view-btn ${activeView === 'chat' ? 'view-btn-active' : ''}`}
-              type="button"
-              onClick={() => setActiveView('chat')}
-            >
-              Chat
-            </button>
-            <button
-              className={`view-btn ${activeView === 'dashboard' ? 'view-btn-active' : ''}`}
-              type="button"
-              onClick={() => setActiveView('dashboard')}
-            >
-              Dashboard
-            </button>
-          </div>
-          <div className="hidden items-center gap-6 md:flex">
-            <span>Lisbon</span>
-            <span>Porto</span>
-            <span>Coastal</span>
-            <button className="pill">Explore map</button>
-          </div>
           <button
             className="pill"
             type="button"
@@ -179,72 +156,9 @@ function App() {
         </div>
       </header>
 
-      {activeView === 'chat' ? (
-      <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-6 pb-12 md:grid-cols-[1.1fr_0.9fr]">
-        <section className="order-2 rounded-3xl border border-sand bg-white/80 p-6 shadow-soft backdrop-blur md:order-1">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-ink-muted">Featured stays</p>
-              <h2 className="mt-2 text-3xl font-semibold">Airbnb Portugal, simplified.</h2>
-            </div>
-            <div className="flex gap-2">
-              <span className="badge">New: Reviews + KG</span>
-              <span className="badge badge-muted">Qdrant</span>
-              <span className="badge badge-muted">Neo4j</span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <article className="listing-card">
-              <div className="listing-art lisboa" />
-              <div className="mt-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-ink-muted">Lisbon</p>
-                <h3 className="mt-2 text-lg font-semibold">Alfama Rooftop Hideaway</h3>
-                <p className="mt-2 text-sm text-ink-subtle">
-                  Walkable alleys, sunset terraces, and quiet mornings near the river.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-ink-subtle">
-                  <span className="tag">Terrace</span>
-                  <span className="tag">Historic</span>
-                  <span className="tag">Coffee nearby</span>
-                </div>
-              </div>
-            </article>
-
-            <article className="listing-card">
-              <div className="listing-art porto" />
-              <div className="mt-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-ink-muted">Porto</p>
-                <h3 className="mt-2 text-lg font-semibold">Ribeira Brick Loft</h3>
-                <p className="mt-2 text-sm text-ink-subtle">
-                  Riverfront views with polished wood interiors and late-night vinho.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-ink-subtle">
-                  <span className="tag">River view</span>
-                  <span className="tag">Loft</span>
-                  <span className="tag">Local eats</span>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <div className="stat-card">
-              <p className="text-xs uppercase tracking-[0.3em] text-ink-muted">Coverage</p>
-              <h4 className="mt-2 text-2xl font-semibold">2 cities</h4>
-              <p className="mt-1 text-sm text-ink-subtle">Lisbon + Porto listings</p>
-            </div>
-            <div className="stat-card">
-              <p className="text-xs uppercase tracking-[0.3em] text-ink-muted">Signals</p>
-              <h4 className="mt-2 text-2xl font-semibold">Amenities</h4>
-              <p className="mt-1 text-sm text-ink-subtle">Pool, wifi, view, vibe</p>
-            </div>
-            <div className="stat-card">
-              <p className="text-xs uppercase tracking-[0.3em] text-ink-muted">Mode</p>
-              <h4 className="mt-2 text-2xl font-semibold">Conversational</h4>
-              <p className="mt-1 text-sm text-ink-subtle">Ask in natural language</p>
-            </div>
-          </div>
+      <main className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 px-4 pb-12 md:px-8 lg:grid-cols-[1.25fr_0.75fr]">
+        <section className="order-2 md:order-1">
+          <DashboardPanel />
         </section>
 
         <section className="chat-panel order-1 md:order-2">
@@ -310,11 +224,6 @@ function App() {
           </div>
         </section>
       </main>
-      ) : (
-      <main className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-12">
-        <DashboardPanel />
-      </main>
-      )}
 
       {updateModalOpen && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
