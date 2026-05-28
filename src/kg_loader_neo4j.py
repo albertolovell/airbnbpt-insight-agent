@@ -36,6 +36,7 @@ def ingest_metadata_triples(driver, csv_path: Path):
         (l:Listing)-[:PRICE_LEVEL]->(p:PriceLevel)
     """
   df = pd.read_csv(csv_path)
+  batch_size = 5000
   with driver.session() as session:
     session.run('CREATE CONSTRAINT IF NOT EXISTS FOR (l:Listing) REQUIRE l.id IS UNIQUE')
     session.run('CREATE CONSTRAINT IF NOT EXISTS FOR (a:Amenity) REQUIRE a.name IS UNIQUE')
@@ -43,6 +44,7 @@ def ingest_metadata_triples(driver, csv_path: Path):
     session.run('CREATE CONSTRAINT IF NOT EXISTS FOR (p:PriceLevel) REQUIRE p.level IS UNIQUE')
 
     tx = session.begin_transaction()
+    processed = 0
     for _, row in df.iterrows():
       subj = str(row['subject'])
       pred = row['predicate']
@@ -77,6 +79,11 @@ def ingest_metadata_triples(driver, csv_path: Path):
           """,
           lid=subj, obj=obj
           )
+      processed += 1
+      if processed % batch_size == 0:
+        tx.commit()
+        tx = session.begin_transaction()
+        print(f"committed {processed} / {len(df)} triples")
     tx.commit()
     print(f"ingested {len(df)} metadata triples into neo4j")
 
