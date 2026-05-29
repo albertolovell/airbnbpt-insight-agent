@@ -537,8 +537,24 @@ h4 {
   border-radius: 18px;
   border: 1px solid var(--border-soft);
   background: var(--surface-strong);
-  padding: 14px;
+  padding: 14px 14px 16px;
   box-shadow: var(--elev-1);
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-2);
+}
+
+.metric-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .metric-label {
@@ -549,9 +565,29 @@ h4 {
 }
 
 .metric-value {
-  margin-top: 8px;
-  font-size: 1.6rem;
+  margin-top: 10px;
+  font-size: 1.85rem;
+  line-height: 1.05;
+  font-weight: 700;
   font-family: 'Fraunces', serif;
+}
+
+.metric-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .table-card {

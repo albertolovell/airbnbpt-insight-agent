@@ -95,6 +95,10 @@ def get_dashboard_df():
   df['occupancy_num'] = pd.to_numeric(df['estimated_occupancy_l365d'], errors='coerce')
   df['availability_num'] = pd.to_numeric(df['availability_365'], errors='coerce')
   df['revenue_num'] = pd.to_numeric(df['estimated_revenue_l365d'], errors='coerce')
+  booked_days = 365 - df['availability_num']
+  booked_days = booked_days.where(booked_days > 0)
+  df['price_fallback_num'] = (df['revenue_num'] / booked_days).where(booked_days.notna())
+  df['price_num'] = df['price_num'].where(df['price_num'].notna(), df['price_fallback_num'])
   df['reviews_pm_num'] = pd.to_numeric(df['reviews_per_month'], errors='coerce')
   df['rating_num'] = pd.to_numeric(df['review_scores_rating'], errors='coerce')
   df['accommodates_num'] = pd.to_numeric(df['accommodates'], errors='coerce')

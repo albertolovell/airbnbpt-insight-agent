@@ -15,7 +15,9 @@ const DEFAULT_FILTERS = {
 function MetricCard({ label, value, prefix = '', suffix = '' }) {
   return (
     <div className="metric-card">
-      <p className="metric-label">{label}</p>
+      <div className="metric-card-head">
+        <p className="metric-label">{label}</p>
+      </div>
       <p className="metric-value">
         {value === null || value === undefined ? 'N/A' : `${prefix}${value}${suffix}`}
       </p>
@@ -176,7 +178,7 @@ function DashboardPanel() {
       {error && <p className="mt-4 text-sm text-rose-500">{error}</p>}
       {loading && <p className="mt-4 text-sm text-ink-muted">Loading dashboard...</p>}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="metric-grid mt-6">
         <MetricCard label="Listings" value={metrics.listing_count} />
         <MetricCard label="Avg Price" value={metrics.avg_price} prefix="$" />
         <MetricCard label="Median Price" value={metrics.median_price} prefix="$" />
