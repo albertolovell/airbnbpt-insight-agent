@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const DEFAULT_FILTERS = {
   city: 'all',
+  geo_area: 'all',
   room_type: 'all',
   property_type: 'all',
   superhost: 'all',
@@ -66,8 +67,13 @@ function DashboardPanel() {
   const timeSeries = data?.time_series || [];
   const occupancyBands = data?.occupancy_band_chart || [];
   const roomTypeMetricChart = data?.room_type_metric_chart || [];
+  const geoAreaMetricChart = data?.geo_area_metric_chart || [];
+  const mapData = data?.map_data || { cities: [], by_city: {} };
+  const selectedMapCity = filters.city !== 'all' ? filters.city : (mapData.cities?.[0] || null);
+  const activeCityMap = selectedMapCity ? mapData.by_city?.[selectedMapCity] : null;
   const maxListings = Math.max(...timeSeries.map((item) => item.listing_count), 1);
   const maxOccBandCount = Math.max(...occupancyBands.map((item) => item.count), 1);
+  const maxGeoListings = Math.max(...geoAreaMetricChart.map((item) => item.listing_count), 1);
 
   const onFilterChange = (key, value) => {
     setFilters((prev) => ({
@@ -94,6 +100,18 @@ function DashboardPanel() {
           <select value={filters.city} onChange={(e) => onFilterChange('city', e.target.value)}>
             <option value="all">All</option>
             {options.cities.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="filter-field">
+          <span>Geo Area</span>
+          <select value={filters.geo_area} onChange={(e) => onFilterChange('geo_area', e.target.value)}>
+            <option value="all">All</option>
+            {(options.geo_areas || []).map((item) => (
               <option key={item} value={item}>
                 {item}
               </option>
@@ -193,6 +211,50 @@ function DashboardPanel() {
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="table-card lg:col-span-2">
+          <h3 className="text-lg font-semibold">Neighborhood Map (Porto)</h3>
+          <p className="row-sub mt-1">Click an area to filter metrics for that polygon-matched neighborhood.</p>
+          {filters.city === 'all' && (
+            <p className="text-sm text-ink-muted mt-2">Select a specific City to activate neighborhood map filtering.</p>
+          )}
+          {filters.city !== 'all' && activeCityMap?.bbox && activeCityMap?.features?.length > 0 ? (
+            <div className="map-wrap mt-4">
+              <svg viewBox="0 0 1000 620" className="geo-map">
+                {activeCityMap.features.map((feature) => {
+                  const ring = feature.ring || [];
+                  const b = activeCityMap.bbox;
+                  const width = (b.max_lon - b.min_lon) || 1;
+                  const height = (b.max_lat - b.min_lat) || 1;
+                  const points = ring.map(([lon, lat]) => {
+                    const x = ((lon - b.min_lon) / width) * 980 + 10;
+                    const y = 610 - (((lat - b.min_lat) / height) * 600);
+                    return `${x},${y}`;
+                  }).join(' ');
+                  const areaMetrics = geoAreaMetricChart.find((row) => row.name === feature.name);
+                  const intensity = areaMetrics ? Math.max(0.15, areaMetrics.listing_count / maxGeoListings) : 0.08;
+                  const selected = filters.geo_area === feature.name;
+                  return (
+                    <polygon
+                      key={feature.name}
+                      points={points}
+                      className={`geo-area ${selected ? 'geo-area-selected' : ''}`}
+                      style={{ opacity: intensity }}
+                      onClick={() => onFilterChange('geo_area', selected ? 'all' : feature.name)}
+                    >
+                      <title>
+                        {feature.name}
+                        {areaMetrics ? ` • ${areaMetrics.listing_count} listings • $${areaMetrics.avg_price ?? 'N/A'} avg` : ''}
+                      </title>
+                    </polygon>
+                  );
+                })}
+              </svg>
+            </div>
+          ) : (
+            filters.city !== 'all' && <p className="text-sm text-ink-muted mt-4">No GeoJSON map data available for this city in `data/raw`.</p>
+          )}
+        </div>
+
         <div className="table-card">
           <h3 className="text-lg font-semibold">Occupancy Distribution Across Listings</h3>
           <div className="mt-4 space-y-2">
@@ -217,6 +279,25 @@ function DashboardPanel() {
               <div key={`${row.label}-metric`} className="row-item">
                 <div>
                   <p className="row-title">{row.label}</p>
+                  <p className="row-sub">{row.listing_count} listings</p>
+                </div>
+                <div className="row-right">
+                  <p>${row.avg_price ?? 'N/A'}</p>
+                  <p className="row-sub">{row.avg_occupancy_pct ?? 'N/A'}% occ</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="table-card">
+          <h3 className="text-lg font-semibold">Geo Area Snapshot</h3>
+          <div className="mt-3 space-y-2">
+            {geoAreaMetricChart.length === 0 && <p className="text-sm text-ink-muted">No area-level metrics for current filters.</p>}
+            {geoAreaMetricChart.slice(0, 12).map((row) => (
+              <div key={row.name} className="row-item">
+                <div>
+                  <p className="row-title">{row.name}</p>
                   <p className="row-sub">{row.listing_count} listings</p>
                 </div>
                 <div className="row-right">

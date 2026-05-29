@@ -7,6 +7,8 @@ from pathlib import Path
 import pandas as pd
 import threading
 from datetime import datetime, timezone
+import json
+import re
 from src.update_listings import run_full_update
 
 app = FastAPI()
@@ -25,6 +27,7 @@ class QueryRequest(BaseModel):
 _agent_runner = None
 _dashboard_df = None
 _dashboard_options = None
+_dashboard_map_features = None
 _update_lock = threading.Lock()
 _update_state = {
   'status': 'idle',
@@ -73,10 +76,107 @@ def _normalize_city(value):
   return city.title()
 
 
+def _extract_geojson_date(path: Path):
+  match = re.search(r'_(\d{4})\.geojson$', path.name.lower())
+  if not match:
+    return -1
+  return int(match.group(1))
+
+
+def _normalize_geo_city(value):
+  if value is None:
+    return None
+  city = str(value).strip().replace('_', ' ').replace('-', ' ')
+  if not city:
+    return None
+  return city.title()
+
+
+def _load_latest_city_geojsons():
+  raw_dir = Path(__file__).resolve().parents[1] / 'data' / 'raw'
+  files = sorted(raw_dir.glob('*_neighbourhoods_*.geojson'))
+  by_city = {}
+  for path in files:
+    match = re.match(r'^(?P<city>.+)_neighbourhoods_(?P<date>\d{4})\.geojson$', path.name.lower())
+    if not match:
+      continue
+    city = _normalize_geo_city(match.group('city'))
+    if not city:
+      continue
+    date_val = _extract_geojson_date(path)
+    current = by_city.get(city)
+    if current is None or date_val > current['date_val']:
+      by_city[city] = {'path': path, 'date_val': date_val}
+
+  geo_by_city = {}
+  for city, meta in by_city.items():
+    with open(meta['path'], 'r', encoding='utf-8') as f:
+      geo_by_city[city] = json.load(f)
+  return geo_by_city
+
+
+def _point_in_ring(lon, lat, ring):
+  inside = False
+  n = len(ring)
+  if n < 3:
+    return False
+  for i in range(n):
+    x1, y1 = ring[i]
+    x2, y2 = ring[(i + 1) % n]
+    intersects = ((y1 > lat) != (y2 > lat)) and (lon < (x2 - x1) * (lat - y1) / ((y2 - y1) or 1e-12) + x1)
+    if intersects:
+      inside = not inside
+  return inside
+
+
+def _point_in_polygon_geom(lon, lat, geometry):
+  if geometry is None:
+    return False
+  geom_type = geometry.get('type')
+  coords = geometry.get('coordinates', [])
+  if geom_type == 'Polygon':
+    if not coords:
+      return False
+    return _point_in_ring(lon, lat, coords[0])
+  if geom_type == 'MultiPolygon':
+    for poly in coords:
+      if poly and _point_in_ring(lon, lat, poly[0]):
+        return True
+  return False
+
+
+def _geom_bbox(geometry):
+  geom_type = geometry.get('type')
+  coords = geometry.get('coordinates', [])
+  points = []
+  if geom_type == 'Polygon':
+    if coords:
+      points = coords[0]
+  elif geom_type == 'MultiPolygon':
+    for poly in coords:
+      if poly:
+        points.extend(poly[0])
+  if not points:
+    return None
+  xs = [p[0] for p in points]
+  ys = [p[1] for p in points]
+  return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _simplify_ring(ring, target_points=90):
+  if len(ring) <= target_points:
+    return ring
+  step = max(len(ring) // target_points, 1)
+  simplified = ring[::step]
+  if simplified[-1] != ring[-1]:
+    simplified.append(ring[-1])
+  return simplified
+
+
 def get_dashboard_df():
-  global _dashboard_df, _dashboard_options
+  global _dashboard_df, _dashboard_options, _dashboard_map_features
   if _dashboard_df is not None:
-    return _dashboard_df, _dashboard_options
+    return _dashboard_df, _dashboard_options, _dashboard_map_features
 
   data_path = Path(__file__).resolve().parents[1] / 'data' / 'processed' / 'listings.parquet'
   if not data_path.exists():
@@ -86,6 +186,7 @@ def get_dashboard_df():
 
   cols = [
     'id', 'neighbourhood_group_cleansed', 'neighbourhood_cleansed', 'room_type', 'property_type', 'price',
+    'latitude', 'longitude',
     'availability_365', 'estimated_occupancy_l365d', 'estimated_revenue_l365d',
     'reviews_per_month', 'review_scores_rating', 'accommodates', 'host_is_superhost', 'bedrooms', 'beds',
     'first_review', 'last_review', 'number_of_reviews_l30d', 'number_of_reviews_ltm'
@@ -110,9 +211,82 @@ def get_dashboard_df():
   df['price_level'] = df['price_num'].apply(_price_bucket)
   df['city_name'] = df['neighbourhood_group_cleansed'].apply(_normalize_city)
   df['city_name'] = df['city_name'].fillna('Unknown')
+  df['lat_num'] = pd.to_numeric(df['latitude'], errors='coerce')
+  df['lon_num'] = pd.to_numeric(df['longitude'], errors='coerce')
   df['first_review_dt'] = pd.to_datetime(df['first_review'], errors='coerce')
   df['last_review_dt'] = pd.to_datetime(df['last_review'], errors='coerce')
   df['last_review_month'] = df['last_review_dt'].dt.to_period('M')
+  df['geo_area'] = None
+
+  geo_by_city = _load_latest_city_geojsons()
+  map_data_by_city = {}
+  for city, geo in geo_by_city.items():
+    if not isinstance(geo, dict):
+      continue
+    features = geo.get('features', [])
+    prepared = []
+    min_lon = 999.0
+    min_lat = 999.0
+    max_lon = -999.0
+    max_lat = -999.0
+    for feature in features:
+      geom = feature.get('geometry') or {}
+      props = feature.get('properties') or {}
+      area_name = props.get('neighbourhood') or props.get('name') or 'Unknown'
+      area_group = props.get('neighbourhood_group') or city
+      bbox = _geom_bbox(geom)
+      if bbox is None:
+        continue
+      bx1, by1, bx2, by2 = bbox
+      min_lon, min_lat = min(min_lon, bx1), min(min_lat, by1)
+      max_lon, max_lat = max(max_lon, bx2), max(max_lat, by2)
+      ring = []
+      if geom.get('type') == 'Polygon' and geom.get('coordinates'):
+        ring = geom['coordinates'][0]
+      elif geom.get('type') == 'MultiPolygon' and geom.get('coordinates'):
+        ring = geom['coordinates'][0][0]
+      ring = _simplify_ring(ring)
+      prepared.append({
+        'name': str(area_name),
+        'group': str(area_group),
+        'bbox': bbox,
+        'geometry': geom,
+        'ring': ring
+      })
+
+    city_idx = df[(df['city_name'] == city) & df['lat_num'].notna() & df['lon_num'].notna()].index
+    for idx in city_idx:
+      lat = float(df.at[idx, 'lat_num'])
+      lon = float(df.at[idx, 'lon_num'])
+      matched = None
+      for area in prepared:
+        x1, y1, x2, y2 = area['bbox']
+        if lon < x1 or lon > x2 or lat < y1 or lat > y2:
+          continue
+        if _point_in_polygon_geom(lon, lat, area['geometry']):
+          matched = area['name']
+          break
+      if matched:
+        df.at[idx, 'geo_area'] = matched
+
+    map_data_by_city[city] = {
+      'bbox': {
+        'min_lon': min_lon,
+        'min_lat': min_lat,
+        'max_lon': max_lon,
+        'max_lat': max_lat
+      },
+      'features': [{
+        'name': item['name'],
+        'group': item['group'],
+        'ring': item['ring']
+      } for item in prepared]
+    }
+
+  _dashboard_map_features = {
+    'cities': sorted(map_data_by_city.keys()),
+    'by_city': map_data_by_city
+  }
 
   cities = sorted([c for c in df['city_name'].dropna().unique().tolist() if str(c).strip()])
   room_types = sorted([r for r in df['room_type'].dropna().unique().tolist() if str(r).strip()])
@@ -120,10 +294,12 @@ def get_dashboard_df():
   _dashboard_options = {
     'cities': cities,
     'room_types': room_types,
-    'property_types': property_types
+    'property_types': property_types,
+    'geo_areas': sorted([a for a in df['geo_area'].dropna().unique().tolist() if str(a).strip()]),
+    'map_cities': sorted(map_data_by_city.keys())
   }
   _dashboard_df = df
-  return _dashboard_df, _dashboard_options
+  return _dashboard_df, _dashboard_options, _dashboard_map_features
 
 def get_agent_runner():
   global _agent_runner
@@ -184,6 +360,7 @@ async def update_listings_status():
 @app.get('/dashboard')
 async def dashboard_data(
   city: str = Query(default='all'),
+  geo_area: str = Query(default='all'),
   room_type: str = Query(default='all'),
   property_type: str = Query(default='all'),
   superhost: str = Query(default='all'),
@@ -192,13 +369,15 @@ async def dashboard_data(
   min_bedrooms: int = Query(default=0, ge=0),
   min_beds: int = Query(default=0, ge=0)
 ):
-  df, options = get_dashboard_df()
+  df, options, map_data = get_dashboard_df()
   filtered = df.copy()
 
   if city != 'all':
     filtered = filtered[filtered['city_name'] == city]
   if room_type != 'all':
     filtered = filtered[filtered['room_type'] == room_type]
+  if geo_area != 'all':
+    filtered = filtered[filtered['geo_area'] == geo_area]
   if property_type != 'all':
     filtered = filtered[filtered['property_type'] == property_type]
   if price_level != 'all':
@@ -234,6 +413,7 @@ async def dashboard_data(
     time_series = []
     occupancy_band_chart = []
     room_type_metric_chart = []
+    geo_area_metric_chart = []
   else:
     city_group = (
       filtered.groupby('city_name', dropna=True)
@@ -288,6 +468,27 @@ async def dashboard_data(
       for _, row in room_group.iterrows()
     ]
 
+    geo_group = (
+      filtered.dropna(subset=['geo_area'])
+      .groupby('geo_area', dropna=True)
+      .agg(
+        listing_count=('id', 'count'),
+        avg_price=('price_num', 'mean'),
+        avg_occupancy_pct=('occupancy_num', 'mean')
+      )
+      .reset_index()
+      .sort_values('listing_count', ascending=False)
+    )
+    geo_area_metric_chart = [
+      {
+        'name': row['geo_area'],
+        'listing_count': int(row['listing_count']),
+        'avg_price': _round_or_none(row['avg_price']),
+        'avg_occupancy_pct': _round_or_none(row['avg_occupancy_pct'])
+      }
+      for _, row in geo_group.iterrows()
+    ]
+
     monthly = (
       filtered.dropna(subset=['last_review_month'])
       .groupby('last_review_month')
@@ -330,6 +531,7 @@ async def dashboard_data(
   return {
     'applied_filters': {
       'city': city,
+      'geo_area': geo_area,
       'room_type': room_type,
       'property_type': property_type,
       'superhost': superhost,
@@ -343,6 +545,8 @@ async def dashboard_data(
     'city_breakdown': city_breakdown,
     'room_type_breakdown': room_type_breakdown,
     'room_type_metric_chart': room_type_metric_chart,
+    'geo_area_metric_chart': geo_area_metric_chart,
     'occupancy_band_chart': occupancy_band_chart,
+    'map_data': map_data,
     'options': options
   }

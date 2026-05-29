@@ -190,6 +190,19 @@ h4 {
   background: linear-gradient(90deg, #9a9aa0, #d5d5d9);
 }
 
+.theme-dark .geo-map {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.theme-dark .geo-area {
+  fill: #bdbdc3;
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.theme-dark .geo-area-selected {
+  fill: #f5f5f7;
+}
+
 .theme-dark .filter-field select,
 .theme-dark .filter-field input {
   background: rgba(22, 22, 25, 0.92);
@@ -660,6 +673,36 @@ h4 {
   font-size: 0.75rem;
   text-align: right;
   color: rgba(23, 23, 23, 0.82);
+}
+
+.map-wrap {
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(245, 245, 245, 0.75);
+}
+
+.geo-map {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.geo-area {
+  fill: #6f6f78;
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 1.25;
+  cursor: pointer;
+  transition: opacity 0.2s ease, stroke-width 0.2s ease, fill 0.2s ease;
+}
+
+.geo-area:hover {
+  stroke-width: 2.2;
+}
+
+.geo-area-selected {
+  fill: #1f1f22;
+  opacity: 1 !important;
 }
 
 .tile-grid {
