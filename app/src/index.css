@@ -92,7 +92,7 @@ h4 {
 
 .theme-dark .badge-muted {
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(245, 239, 230, 0.7);
+  color: rgba(235, 235, 238, 0.72);
 }
 
 .theme-dark .listing-card,
@@ -119,18 +119,18 @@ h4 {
 
 .theme-dark .tag {
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(245, 239, 230, 0.75);
+  color: rgba(235, 235, 238, 0.76);
 }
 
 .theme-dark .status-pill {
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(245, 239, 230, 0.75);
+  color: rgba(235, 235, 238, 0.76);
 }
 
 .theme-dark .chat-bubble {
-  background: rgba(35, 30, 26, 0.9);
+  background: rgba(34, 34, 38, 0.9);
   border-color: rgba(255, 255, 255, 0.08);
-  color: rgba(245, 239, 230, 0.9);
+  color: rgba(239, 239, 242, 0.92);
 }
 
 .theme-dark .chat-bubble-user {
@@ -141,13 +141,13 @@ h4 {
 .theme-dark .chip {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(245, 239, 230, 0.7);
+  color: rgba(232, 232, 236, 0.74);
 }
 
 .theme-dark .chat-input {
-  background: rgba(21, 18, 15, 0.9);
+  background: rgba(22, 22, 25, 0.92);
   border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(245, 239, 230, 0.9);
+  color: rgba(239, 239, 242, 0.92);
 }
 
 .theme-dark .send-btn {
@@ -155,11 +155,11 @@ h4 {
 }
 
 .theme-dark .text-ink-muted {
-  color: rgba(245, 239, 230, 0.6);
+  color: rgba(230, 230, 234, 0.62);
 }
 
 .theme-dark .text-ink-subtle {
-  color: rgba(245, 239, 230, 0.75);
+  color: rgba(232, 232, 236, 0.77);
 }
 
 .theme-dark .border-sand {
@@ -179,7 +179,7 @@ h4 {
 
 .theme-dark .trend-label,
 .theme-dark .trend-value {
-  color: rgba(245, 239, 230, 0.74);
+  color: rgba(232, 232, 236, 0.74);
 }
 
 .theme-dark .hbar-track {
@@ -192,8 +192,8 @@ h4 {
 
 .theme-dark .filter-field select,
 .theme-dark .filter-field input {
-  background: rgba(21, 18, 15, 0.9);
-  color: rgba(245, 239, 230, 0.9);
+  background: rgba(22, 22, 25, 0.92);
+  color: rgba(239, 239, 242, 0.92);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -203,7 +203,7 @@ h4 {
 }
 
 .theme-dark .view-btn {
-  color: rgba(245, 239, 230, 0.75);
+  color: rgba(232, 232, 236, 0.76);
 }
 
 .theme-dark .view-btn-active {
@@ -217,7 +217,7 @@ h4 {
 }
 
 .theme-dark .update-stamp {
-  color: rgba(245, 239, 230, 0.52);
+  color: rgba(228, 228, 232, 0.52);
 }
 
 .hero-glow {
@@ -351,7 +351,7 @@ h4 {
 
 .tag {
   border-radius: 999px;
-  background: #f6efe5;
+  background: #ececef;
   padding: 0.3rem 0.75rem;
 }
 
@@ -383,10 +383,23 @@ h4 {
   z-index: 4;
 }
 
+.chat-body {
+  min-height: 0;
+}
+
+@media (min-width: 769px) {
+  .chat-panel {
+    position: sticky;
+    top: 20px;
+    height: calc(100vh - 56px);
+    max-height: calc(100vh - 56px);
+  }
+}
+
 .status-pill {
   border-radius: 999px;
   padding: 0.25rem 0.9rem;
-  background: #f6efe5;
+  background: #ededf0;
   font-size: 0.75rem;
 }
 
@@ -398,7 +411,7 @@ h4 {
   flex-direction: column;
   gap: 12px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(160, 140, 120, 0.45) transparent;
+  scrollbar-color: rgba(120, 120, 130, 0.45) transparent;
 }
 
 .chat-bubble {
