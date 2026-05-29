@@ -13,8 +13,9 @@ COLLECTION_NAME = 'airbnb_reviews'
 BATCH_SIZE = 256
 QDRANT_HOST = os.getenv('QDRANT_HOST', 'localhost')
 QDRANT_PORT = int(os.getenv('QDRANT_PORT') or '6333')
+HF_TOKEN = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACEHUB_API_TOKEN')
 
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', token=HF_TOKEN)
 client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
 if not client.collection_exists(collection_name=COLLECTION_NAME):
