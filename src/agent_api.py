@@ -9,6 +9,8 @@ import threading
 from datetime import datetime, timezone
 import json
 import re
+import requests
+from io import StringIO
 from src.update_listings import run_full_update
 
 app = FastAPI()
@@ -90,6 +92,38 @@ def _normalize_geo_city(value):
   if not city:
     return None
   return city.title()
+
+
+def _extract_city_date_from_filename(path: Path):
+  match = re.match(r'^(?P<city>.+)_listings_(?P<date>\d{4}-\d{2}-\d{2})\.csv$', path.name.lower())
+  if not match:
+    return None, None
+  return _normalize_geo_city(match.group('city')), match.group('date')
+
+
+def _load_price_fallback_from_visualisations(raw_dir: Path):
+  out = {}
+  listing_files = sorted(raw_dir.glob('*_listings_*.csv'))
+  for file_path in listing_files:
+    city_name, date_text = _extract_city_date_from_filename(file_path)
+    if not city_name or not date_text:
+      continue
+    city_slug = city_name.lower().replace(' ', '-')
+    url = f"https://data.insideairbnb.com/portugal/{city_slug}/{city_slug}/{date_text}/visualisations/listings.csv"
+    try:
+      response = requests.get(url, timeout=30)
+      if response.status_code != 200:
+        continue
+      tmp = pd.read_csv(StringIO(response.text), usecols=['id', 'price'])
+      if tmp.empty:
+        continue
+      tmp['price_num'] = tmp['price'].apply(_to_float)
+      tmp = tmp.dropna(subset=['price_num'])
+      for _, row in tmp.iterrows():
+        out[int(row['id'])] = float(row['price_num'])
+    except Exception:
+      continue
+  return out
 
 
 def _load_latest_city_geojsons():
@@ -200,6 +234,14 @@ def get_dashboard_df():
   booked_days = booked_days.where(booked_days > 0)
   df['price_fallback_num'] = (df['revenue_num'] / booked_days).where(booked_days.notna())
   df['price_num'] = df['price_num'].where(df['price_num'].notna(), df['price_fallback_num'])
+  if df['price_num'].isna().all():
+    raw_dir = Path(__file__).resolve().parents[1] / 'data' / 'raw'
+    external_price = _load_price_fallback_from_visualisations(raw_dir)
+    if external_price:
+      df['price_num'] = df.apply(
+        lambda row: external_price.get(int(row['id'])) if pd.notna(row['id']) else None,
+        axis=1
+      )
   df['reviews_pm_num'] = pd.to_numeric(df['reviews_per_month'], errors='coerce')
   df['rating_num'] = pd.to_numeric(df['review_scores_rating'], errors='coerce')
   df['accommodates_num'] = pd.to_numeric(df['accommodates'], errors='coerce')
@@ -287,6 +329,22 @@ def get_dashboard_df():
     'cities': sorted(map_data_by_city.keys()),
     'by_city': map_data_by_city
   }
+
+  # Portugal-wide fallback overview map using listing coordinates.
+  coords_df = df[df['lat_num'].notna() & df['lon_num'].notna()][['city_name', 'lat_num', 'lon_num']]
+  if not coords_df.empty:
+    sample_points = coords_df.sample(n=min(3500, len(coords_df)), random_state=42)
+    overview_points = [{
+      'city': row['city_name'],
+      'lat': float(row['lat_num']),
+      'lon': float(row['lon_num'])
+    } for _, row in sample_points.iterrows()]
+    _dashboard_map_features['portugal_overview'] = {
+      'bbox': {'min_lon': -9.6, 'max_lon': -6.0, 'min_lat': 36.8, 'max_lat': 42.2},
+      'points': overview_points
+    }
+  else:
+    _dashboard_map_features['portugal_overview'] = {'bbox': None, 'points': []}
 
   cities = sorted([c for c in df['city_name'].dropna().unique().tolist() if str(c).strip()])
   room_types = sorted([r for r in df['room_type'].dropna().unique().tolist() if str(r).strip()])

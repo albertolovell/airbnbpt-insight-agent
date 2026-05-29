@@ -203,6 +203,10 @@ h4 {
   fill: #f5f5f7;
 }
 
+.theme-dark .geo-point {
+  fill: rgba(236, 236, 242, 0.42);
+}
+
 .theme-dark .filter-field select,
 .theme-dark .filter-field input {
   background: rgba(22, 22, 25, 0.92);
@@ -682,10 +686,18 @@ h4 {
   background: rgba(245, 245, 245, 0.75);
 }
 
+.map-wrap-compact {
+  max-height: 300px;
+}
+
 .geo-map {
   width: 100%;
   height: auto;
   display: block;
+}
+
+.geo-point {
+  fill: rgba(32, 32, 38, 0.3);
 }
 
 .geo-area {

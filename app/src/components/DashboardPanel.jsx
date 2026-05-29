@@ -71,6 +71,7 @@ function DashboardPanel() {
   const mapData = data?.map_data || { cities: [], by_city: {} };
   const selectedMapCity = filters.city !== 'all' ? filters.city : (mapData.cities?.[0] || null);
   const activeCityMap = selectedMapCity ? mapData.by_city?.[selectedMapCity] : null;
+  const portugalOverview = mapData?.portugal_overview || { bbox: null, points: [] };
   const maxListings = Math.max(...timeSeries.map((item) => item.listing_count), 1);
   const maxOccBandCount = Math.max(...occupancyBands.map((item) => item.count), 1);
   const maxGeoListings = Math.max(...geoAreaMetricChart.map((item) => item.listing_count), 1);
@@ -212,22 +213,43 @@ function DashboardPanel() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="table-card lg:col-span-2">
+          <h3 className="text-lg font-semibold">Portugal Listing Coverage</h3>
+          <p className="row-sub mt-1">Overview of listing coordinates across Portugal. Darker clusters indicate denser markets.</p>
+          {portugalOverview?.bbox && portugalOverview?.points?.length > 0 ? (
+            <div className="map-wrap map-wrap-compact mt-3">
+              <svg viewBox="0 0 860 420" className="geo-map">
+                {portugalOverview.points.map((point, idx) => {
+                  const b = portugalOverview.bbox;
+                  const width = (b.max_lon - b.min_lon) || 1;
+                  const height = (b.max_lat - b.min_lat) || 1;
+                  const x = ((point.lon - b.min_lon) / width) * 840 + 10;
+                  const y = 410 - (((point.lat - b.min_lat) / height) * 400);
+                  return <circle key={`${point.city}-${idx}`} cx={x} cy={y} r="1.2" className="geo-point" />;
+                })}
+              </svg>
+            </div>
+          ) : (
+            <p className="text-sm text-ink-muted mt-3">No coordinate data available for overview map.</p>
+          )}
+        </div>
+
+        <div className="table-card lg:col-span-2">
           <h3 className="text-lg font-semibold">Neighborhood Map {selectedMapCity ? `(${selectedMapCity})` : ''}</h3>
           <p className="row-sub mt-1">Click an area to filter metrics for that polygon-matched neighborhood.</p>
           {filters.city === 'all' && selectedMapCity && (
             <p className="text-sm text-ink-muted mt-2">Showing map preview for {selectedMapCity}. Click an area to focus that city and neighborhood.</p>
           )}
           {activeCityMap?.bbox && activeCityMap?.features?.length > 0 ? (
-            <div className="map-wrap mt-4">
-              <svg viewBox="0 0 1000 620" className="geo-map">
+            <div className="map-wrap map-wrap-compact mt-3">
+              <svg viewBox="0 0 900 460" className="geo-map">
                 {activeCityMap.features.map((feature) => {
                   const ring = feature.ring || [];
                   const b = activeCityMap.bbox;
                   const width = (b.max_lon - b.min_lon) || 1;
                   const height = (b.max_lat - b.min_lat) || 1;
                   const points = ring.map(([lon, lat]) => {
-                    const x = ((lon - b.min_lon) / width) * 980 + 10;
-                    const y = 610 - (((lat - b.min_lat) / height) * 600);
+                    const x = ((lon - b.min_lon) / width) * 880 + 10;
+                    const y = 450 - (((lat - b.min_lat) / height) * 440);
                     return `${x},${y}`;
                   }).join(' ');
                   const areaMetrics = geoAreaMetricChart.find((row) => row.name === feature.name);
