@@ -195,7 +195,7 @@ def get_dashboard_df():
   df['price_num'] = df['price'].apply(_to_float)
   df['occupancy_num'] = pd.to_numeric(df['estimated_occupancy_l365d'], errors='coerce')
   df['availability_num'] = pd.to_numeric(df['availability_365'], errors='coerce')
-  df['revenue_num'] = pd.to_numeric(df['estimated_revenue_l365d'], errors='coerce')
+  df['revenue_num'] = df['estimated_revenue_l365d'].apply(_to_float)
   booked_days = 365 - df['availability_num']
   booked_days = booked_days.where(booked_days > 0)
   df['price_fallback_num'] = (df['revenue_num'] / booked_days).where(booked_days.notna())

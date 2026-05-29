@@ -212,12 +212,12 @@ function DashboardPanel() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="table-card lg:col-span-2">
-          <h3 className="text-lg font-semibold">Neighborhood Map (Porto)</h3>
+          <h3 className="text-lg font-semibold">Neighborhood Map {selectedMapCity ? `(${selectedMapCity})` : ''}</h3>
           <p className="row-sub mt-1">Click an area to filter metrics for that polygon-matched neighborhood.</p>
-          {filters.city === 'all' && (
-            <p className="text-sm text-ink-muted mt-2">Select a specific City to activate neighborhood map filtering.</p>
+          {filters.city === 'all' && selectedMapCity && (
+            <p className="text-sm text-ink-muted mt-2">Showing map preview for {selectedMapCity}. Click an area to focus that city and neighborhood.</p>
           )}
-          {filters.city !== 'all' && activeCityMap?.bbox && activeCityMap?.features?.length > 0 ? (
+          {activeCityMap?.bbox && activeCityMap?.features?.length > 0 ? (
             <div className="map-wrap mt-4">
               <svg viewBox="0 0 1000 620" className="geo-map">
                 {activeCityMap.features.map((feature) => {
@@ -239,7 +239,12 @@ function DashboardPanel() {
                       points={points}
                       className={`geo-area ${selected ? 'geo-area-selected' : ''}`}
                       style={{ opacity: intensity }}
-                      onClick={() => onFilterChange('geo_area', selected ? 'all' : feature.name)}
+                      onClick={() => {
+                        if (filters.city === 'all' && selectedMapCity) {
+                          onFilterChange('city', selectedMapCity);
+                        }
+                        onFilterChange('geo_area', selected ? 'all' : feature.name);
+                      }}
                     >
                       <title>
                         {feature.name}
@@ -251,7 +256,7 @@ function DashboardPanel() {
               </svg>
             </div>
           ) : (
-            filters.city !== 'all' && <p className="text-sm text-ink-muted mt-4">No GeoJSON map data available for this city in `data/raw`.</p>
+            <p className="text-sm text-ink-muted mt-4">No GeoJSON map data available for this city in `data/raw`.</p>
           )}
         </div>
 
