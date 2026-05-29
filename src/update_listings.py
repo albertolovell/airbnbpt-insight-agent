@@ -2,6 +2,7 @@ import gzip
 import json
 import os
 import re
+import socket
 import shutil
 import subprocess
 import sys
@@ -278,6 +279,36 @@ def _reset_qdrant_checkpoints():
     checkpoint.unlink(missing_ok=True)
 
 
+def _preflight_huggingface_access():
+  hf_token = os.getenv('HF_TOKEN') or os.getenv('HUGGINGFACEHUB_API_TOKEN')
+  try:
+    socket.getaddrinfo('huggingface.co', 443)
+  except Exception as exc:
+    raise RuntimeError(
+      f"Hugging Face DNS lookup failed: {exc}. "
+      "Check network/DNS or Docker Desktop DNS servers."
+    )
+
+  try:
+    response = requests.get('https://huggingface.co', timeout=15)
+    response.raise_for_status()
+  except Exception as exc:
+    raise RuntimeError(
+      f"Hugging Face HTTPS check failed: {exc}. "
+      "Check outbound internet access."
+    )
+
+  if hf_token:
+    try:
+      from huggingface_hub import HfApi
+      HfApi(token=hf_token).whoami()
+    except Exception as exc:
+      raise RuntimeError(
+        f"Hugging Face token validation failed: {exc}. "
+        "Verify HF_TOKEN/HUGGINGFACEHUB_API_TOKEN."
+      )
+
+
 def run_full_update():
   RAW_DIR.mkdir(parents=True, exist_ok=True)
   latest_snapshot = local_latest_snapshot_by_city()
@@ -299,6 +330,7 @@ def run_full_update():
   else:
     status_message = 'database update completed'
 
+  _preflight_huggingface_access()
   _reset_qdrant_checkpoints()
   _run_python_script('ingestion.py')
   build_metadata_triples()
