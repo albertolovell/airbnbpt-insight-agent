@@ -130,7 +130,7 @@ function App() {
   return (
     <div className={`min-h-screen bg-shell text-ink relative overflow-hidden ${darkMode ? 'theme-dark' : ''}`}>
       <div className="hero-glow" aria-hidden="true" />
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 md:px-8 md:py-6">
+      <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5 md:px-10 md:py-6">
         <div className="flex items-center gap-3">
           <div className="logo-mark">AP</div>
           <div>
@@ -156,7 +156,7 @@ function App() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 pb-12 md:px-8 lg:grid-cols-[1.2fr_0.8fr]">
+      <main className="relative z-10 mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 px-5 pb-12 md:px-10 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="order-2 md:order-1">
           <DashboardPanel />
         </section>

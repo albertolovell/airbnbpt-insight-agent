@@ -192,7 +192,7 @@ function DashboardPanel() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="table-card">
-          <h3 className="text-lg font-semibold">Occupancy distribution</h3>
+          <h3 className="text-lg font-semibold">Occupancy Distribution Across Listings</h3>
           <div className="mt-4 space-y-2">
             {occupancyBands.length === 0 && <p className="text-sm text-ink-muted">No occupancy data for current filters.</p>}
             {occupancyBands.map((row) => (
@@ -208,7 +208,7 @@ function DashboardPanel() {
         </div>
 
         <div className="table-card">
-          <h3 className="text-lg font-semibold">Room type performance</h3>
+          <h3 className="text-lg font-semibold">Room Type Pricing and Occupancy Snapshot</h3>
           <div className="mt-3 space-y-2">
             {roomTypeMetricChart.length === 0 && <p className="text-sm text-ink-muted">No room type data for current filters.</p>}
             {roomTypeMetricChart.map((row) => (
@@ -227,7 +227,7 @@ function DashboardPanel() {
         </div>
 
         <div className="table-card lg:col-span-2">
-          <h3 className="text-lg font-semibold">Time series: listing activity by month</h3>
+          <h3 className="text-lg font-semibold">Monthly Listing Activity Trend</h3>
           <p className="row-sub mt-1">Based on each listing&apos;s `last_review` month, filtered by your current selection.</p>
           <div className="trend-chart mt-4">
             {timeSeries.length === 0 && <p className="text-sm text-ink-muted">No trend data for current filters.</p>}
@@ -262,41 +262,37 @@ function DashboardPanel() {
         </div>
 
         <div className="table-card">
-          <h3 className="text-lg font-semibold">City breakdown</h3>
-          <div className="mt-3 space-y-2">
+          <h3 className="text-lg font-semibold">Top Cities by Demand and Price</h3>
+          <div className="mt-3 tile-grid">
             {cities.length === 0 && <p className="text-sm text-ink-muted">No data for current filters.</p>}
             {cities.map((row) => (
-              <div key={row.city} className="row-item">
-                <div>
+              <div key={row.city} className="analytic-tile">
+                <div className="analytic-tile-head">
                   <p className="row-title">{row.city}</p>
-                  <p className="row-sub">
-                    {row.listing_count} listings • ${row.avg_price ?? 'N/A'} avg price
-                  </p>
                 </div>
-                <div className="row-right">
-                  <p>{row.avg_occupancy_pct ?? 'N/A'}%</p>
-                  <p className="row-sub">{row.avg_reviews_per_month ?? 'N/A'} rev/mo</p>
-                </div>
+                <p className="row-sub">{row.listing_count} listings</p>
+                <p className="analytic-kpi">${row.avg_price ?? 'N/A'}</p>
+                <p className="row-sub">Avg nightly price</p>
+                <p className="analytic-detail">{row.avg_occupancy_pct ?? 'N/A'}% occupancy</p>
+                <p className="analytic-detail">{row.avg_reviews_per_month ?? 'N/A'} reviews/mo</p>
               </div>
             ))}
           </div>
         </div>
 
         <div className="table-card">
-          <h3 className="text-lg font-semibold">Room type split</h3>
-          <div className="mt-3 space-y-2">
+          <h3 className="text-lg font-semibold">Room Mix Overview</h3>
+          <div className="mt-3 tile-grid">
             {roomTypes.length === 0 && <p className="text-sm text-ink-muted">No data for current filters.</p>}
             {roomTypes.map((row) => (
-              <div key={row.room_type} className="row-item">
-                <div>
+              <div key={row.room_type} className="analytic-tile">
+                <div className="analytic-tile-head">
                   <p className="row-title">{row.room_type}</p>
-                  <p className="row-sub">
-                    {row.listing_count} listings • ${row.avg_price ?? 'N/A'} avg price
-                  </p>
                 </div>
-                <div className="row-right">
-                  <p>{row.avg_occupancy_pct ?? 'N/A'}%</p>
-                </div>
+                <p className="row-sub">{row.listing_count} listings</p>
+                <p className="analytic-kpi">${row.avg_price ?? 'N/A'}</p>
+                <p className="row-sub">Avg nightly price</p>
+                <p className="analytic-detail">{row.avg_occupancy_pct ?? 'N/A'}% occupancy</p>
               </div>
             ))}
           </div>
