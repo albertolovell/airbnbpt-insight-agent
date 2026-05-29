@@ -10,7 +10,7 @@ const DEFAULT_FILTERS = {
   price_level: 'all',
   min_accommodates: 1,
   min_bedrooms: 0,
-  min_beds: 0
+  min_beds: 0,
 };
 
 function MetricCard({ label, value, prefix = '', suffix = '' }) {
@@ -20,7 +20,9 @@ function MetricCard({ label, value, prefix = '', suffix = '' }) {
         <p className="metric-label">{label}</p>
       </div>
       <p className="metric-value">
-        {value === null || value === undefined ? 'N/A' : `${prefix}${value}${suffix}`}
+        {value === null || value === undefined
+          ? 'N/A'
+          : `${prefix}${value}${suffix}`}
       </p>
     </div>
   );
@@ -34,7 +36,7 @@ function DashboardPanel() {
 
   const queryParams = useMemo(
     () => ({
-      ...filters
+      ...filters,
     }),
     [filters]
   );
@@ -60,8 +62,13 @@ function DashboardPanel() {
     };
   }, [queryParams]);
 
-  const options = data?.options || { cities: [], room_types: [], property_types: [] };
+  const options = data?.options || {
+    cities: [],
+    room_types: [],
+    property_types: [],
+  };
   const metrics = data?.metrics || {};
+  const priceDataAvailable = metrics.price_data_available !== false;
   const cities = data?.city_breakdown || [];
   const roomTypes = data?.room_type_breakdown || [];
   const timeSeries = data?.time_series || [];
@@ -69,17 +76,32 @@ function DashboardPanel() {
   const roomTypeMetricChart = data?.room_type_metric_chart || [];
   const geoAreaMetricChart = data?.geo_area_metric_chart || [];
   const mapData = data?.map_data || { cities: [], by_city: {} };
-  const selectedMapCity = filters.city !== 'all' ? filters.city : (mapData.cities?.[0] || null);
-  const activeCityMap = selectedMapCity ? mapData.by_city?.[selectedMapCity] : null;
-  const portugalOverview = mapData?.portugal_overview || { bbox: null, points: [] };
-  const maxListings = Math.max(...timeSeries.map((item) => item.listing_count), 1);
-  const maxOccBandCount = Math.max(...occupancyBands.map((item) => item.count), 1);
-  const maxGeoListings = Math.max(...geoAreaMetricChart.map((item) => item.listing_count), 1);
+  const selectedMapCity =
+    filters.city !== 'all' ? filters.city : mapData.cities?.[0] || null;
+  const activeCityMap = selectedMapCity
+    ? mapData.by_city?.[selectedMapCity]
+    : null;
+  const portugalOverview = mapData?.portugal_overview || {
+    bbox: null,
+    points: [],
+  };
+  const maxListings = Math.max(
+    ...timeSeries.map((item) => item.listing_count),
+    1
+  );
+  const maxOccBandCount = Math.max(
+    ...occupancyBands.map((item) => item.count),
+    1
+  );
+  const maxGeoListings = Math.max(
+    ...geoAreaMetricChart.map((item) => item.listing_count),
+    1
+  );
 
   const onFilterChange = (key, value) => {
     setFilters((prev) => ({
       ...prev,
-      [key]: key === 'min_accommodates' ? Number(value || 1) : value
+      [key]: key === 'min_accommodates' ? Number(value || 1) : value,
     }));
   };
 
@@ -87,10 +109,18 @@ function DashboardPanel() {
     <section className="dashboard-panel rounded-3xl border border-sand bg-white/80 p-6 shadow-soft backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-ink-muted">Market dashboard</p>
-          <h2 className="mt-2 text-3xl font-semibold">Portugal listing analytics</h2>
+          <p className="text-sm uppercase tracking-[0.3em] text-ink-muted">
+            Market dashboard
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold">
+            Portugal listing analytics
+          </h2>
         </div>
-        <button type="button" className="pill" onClick={() => setFilters(DEFAULT_FILTERS)}>
+        <button
+          type="button"
+          className="pill"
+          onClick={() => setFilters(DEFAULT_FILTERS)}
+        >
           Reset filters
         </button>
       </div>
@@ -98,7 +128,10 @@ function DashboardPanel() {
       <div className="dashboard-filters mt-6">
         <label className="filter-field">
           <span>City</span>
-          <select value={filters.city} onChange={(e) => onFilterChange('city', e.target.value)}>
+          <select
+            value={filters.city}
+            onChange={(e) => onFilterChange('city', e.target.value)}
+          >
             <option value="all">All</option>
             {options.cities.map((item) => (
               <option key={item} value={item}>
@@ -110,7 +143,10 @@ function DashboardPanel() {
 
         <label className="filter-field">
           <span>Geo Area</span>
-          <select value={filters.geo_area} onChange={(e) => onFilterChange('geo_area', e.target.value)}>
+          <select
+            value={filters.geo_area}
+            onChange={(e) => onFilterChange('geo_area', e.target.value)}
+          >
             <option value="all">All</option>
             {(options.geo_areas || []).map((item) => (
               <option key={item} value={item}>
@@ -122,7 +158,10 @@ function DashboardPanel() {
 
         <label className="filter-field">
           <span>Room Type</span>
-          <select value={filters.room_type} onChange={(e) => onFilterChange('room_type', e.target.value)}>
+          <select
+            value={filters.room_type}
+            onChange={(e) => onFilterChange('room_type', e.target.value)}
+          >
             <option value="all">All</option>
             {options.room_types.map((item) => (
               <option key={item} value={item}>
@@ -134,7 +173,10 @@ function DashboardPanel() {
 
         <label className="filter-field">
           <span>Property Type</span>
-          <select value={filters.property_type} onChange={(e) => onFilterChange('property_type', e.target.value)}>
+          <select
+            value={filters.property_type}
+            onChange={(e) => onFilterChange('property_type', e.target.value)}
+          >
             <option value="all">All</option>
             {options.property_types.map((item) => (
               <option key={item} value={item}>
@@ -146,7 +188,10 @@ function DashboardPanel() {
 
         <label className="filter-field">
           <span>Superhost</span>
-          <select value={filters.superhost} onChange={(e) => onFilterChange('superhost', e.target.value)}>
+          <select
+            value={filters.superhost}
+            onChange={(e) => onFilterChange('superhost', e.target.value)}
+          >
             <option value="all">All</option>
             <option value="yes">Yes</option>
             <option value="no">No</option>
@@ -155,7 +200,10 @@ function DashboardPanel() {
 
         <label className="filter-field">
           <span>Price Level</span>
-          <select value={filters.price_level} onChange={(e) => onFilterChange('price_level', e.target.value)}>
+          <select
+            value={filters.price_level}
+            onChange={(e) => onFilterChange('price_level', e.target.value)}
+          >
             <option value="all">All</option>
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -195,18 +243,48 @@ function DashboardPanel() {
       </div>
 
       {error && <p className="mt-4 text-sm text-rose-500">{error}</p>}
-      {loading && <p className="mt-4 text-sm text-ink-muted">Loading dashboard...</p>}
+      {loading && (
+        <p className="mt-4 text-sm text-ink-muted">Loading dashboard...</p>
+      )}
+      {!loading && !priceDataAvailable && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          Price metrics are unavailable for the current dataset.
+        </div>
+      )}
 
       <div className="metric-grid mt-6">
         <MetricCard label="Listings" value={metrics.listing_count} />
         <MetricCard label="Avg Price" value={metrics.avg_price} prefix="$" />
-        <MetricCard label="Median Price" value={metrics.median_price} prefix="$" />
-        <MetricCard label="Avg Occupancy" value={metrics.avg_occupancy_pct} suffix="%" />
-        <MetricCard label="Avg Availability" value={metrics.avg_availability_days} suffix=" days" />
-        <MetricCard label="Avg Revenue (365d)" value={metrics.avg_revenue_l365d} prefix="$" />
-        <MetricCard label="Reviews / Month" value={metrics.avg_reviews_per_month} />
+        <MetricCard
+          label="Median Price"
+          value={metrics.median_price}
+          prefix="$"
+        />
+        <MetricCard
+          label="Avg Occupancy"
+          value={metrics.avg_occupancy_pct}
+          suffix="%"
+        />
+        <MetricCard
+          label="Avg Availability"
+          value={metrics.avg_availability_days}
+          suffix=" days"
+        />
+        <MetricCard
+          label="Avg Revenue (365d)"
+          value={metrics.avg_revenue_l365d}
+          prefix="$"
+        />
+        <MetricCard
+          label="Reviews / Month"
+          value={metrics.avg_reviews_per_month}
+        />
         <MetricCard label="Avg Rating" value={metrics.avg_rating} />
-        <MetricCard label="Superhost Share" value={metrics.superhost_share_pct} suffix="%" />
+        <MetricCard
+          label="Superhost Share"
+          value={metrics.superhost_share_pct}
+          suffix="%"
+        />
         <MetricCard label="Avg Bedrooms" value={metrics.avg_bedrooms} />
         <MetricCard label="Avg Beds" value={metrics.avg_beds} />
       </div>
@@ -214,30 +292,51 @@ function DashboardPanel() {
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="table-card lg:col-span-2">
           <h3 className="text-lg font-semibold">Portugal Listing Coverage</h3>
-          <p className="row-sub mt-1">Overview of listing coordinates across Portugal. Darker clusters indicate denser markets.</p>
+          <p className="row-sub mt-1">
+            Overview of listing coordinates across Portugal. Darker clusters
+            indicate denser markets.
+          </p>
           {portugalOverview?.bbox && portugalOverview?.points?.length > 0 ? (
             <div className="map-wrap map-wrap-compact mt-3">
               <svg viewBox="0 0 860 420" className="geo-map">
                 {portugalOverview.points.map((point, idx) => {
                   const b = portugalOverview.bbox;
-                  const width = (b.max_lon - b.min_lon) || 1;
-                  const height = (b.max_lat - b.min_lat) || 1;
+                  const width = b.max_lon - b.min_lon || 1;
+                  const height = b.max_lat - b.min_lat || 1;
                   const x = ((point.lon - b.min_lon) / width) * 840 + 10;
-                  const y = 410 - (((point.lat - b.min_lat) / height) * 400);
-                  return <circle key={`${point.city}-${idx}`} cx={x} cy={y} r="1.2" className="geo-point" />;
+                  const y = 410 - ((point.lat - b.min_lat) / height) * 400;
+                  return (
+                    <circle
+                      key={`${point.city}-${idx}`}
+                      cx={x}
+                      cy={y}
+                      r="1.2"
+                      className="geo-point"
+                    />
+                  );
                 })}
               </svg>
             </div>
           ) : (
-            <p className="text-sm text-ink-muted mt-3">No coordinate data available for overview map.</p>
+            <p className="text-sm text-ink-muted mt-3">
+              No coordinate data available for overview map.
+            </p>
           )}
         </div>
 
         <div className="table-card lg:col-span-2">
-          <h3 className="text-lg font-semibold">Neighborhood Map {selectedMapCity ? `(${selectedMapCity})` : ''}</h3>
-          <p className="row-sub mt-1">Click an area to filter metrics for that polygon-matched neighborhood.</p>
+          <h3 className="text-lg font-semibold">
+            Neighborhood Map {selectedMapCity ? `(${selectedMapCity})` : ''}
+          </h3>
+          <p className="row-sub mt-1">
+            Click an area to filter metrics for that polygon-matched
+            neighborhood.
+          </p>
           {filters.city === 'all' && selectedMapCity && (
-            <p className="text-sm text-ink-muted mt-2">Showing map preview for {selectedMapCity}. Click an area to focus that city and neighborhood.</p>
+            <p className="text-sm text-ink-muted mt-2">
+              Showing map preview for {selectedMapCity}. Click an area to focus
+              that city and neighborhood.
+            </p>
           )}
           {activeCityMap?.bbox && activeCityMap?.features?.length > 0 ? (
             <div className="map-wrap map-wrap-compact mt-3">
@@ -245,15 +344,21 @@ function DashboardPanel() {
                 {activeCityMap.features.map((feature) => {
                   const ring = feature.ring || [];
                   const b = activeCityMap.bbox;
-                  const width = (b.max_lon - b.min_lon) || 1;
-                  const height = (b.max_lat - b.min_lat) || 1;
-                  const points = ring.map(([lon, lat]) => {
-                    const x = ((lon - b.min_lon) / width) * 880 + 10;
-                    const y = 450 - (((lat - b.min_lat) / height) * 440);
-                    return `${x},${y}`;
-                  }).join(' ');
-                  const areaMetrics = geoAreaMetricChart.find((row) => row.name === feature.name);
-                  const intensity = areaMetrics ? Math.max(0.15, areaMetrics.listing_count / maxGeoListings) : 0.08;
+                  const width = b.max_lon - b.min_lon || 1;
+                  const height = b.max_lat - b.min_lat || 1;
+                  const points = ring
+                    .map(([lon, lat]) => {
+                      const x = ((lon - b.min_lon) / width) * 880 + 10;
+                      const y = 450 - ((lat - b.min_lat) / height) * 440;
+                      return `${x},${y}`;
+                    })
+                    .join(' ');
+                  const areaMetrics = geoAreaMetricChart.find(
+                    (row) => row.name === feature.name
+                  );
+                  const intensity = areaMetrics
+                    ? Math.max(0.15, areaMetrics.listing_count / maxGeoListings)
+                    : 0.08;
                   const selected = filters.geo_area === feature.name;
                   return (
                     <polygon
@@ -265,12 +370,17 @@ function DashboardPanel() {
                         if (filters.city === 'all' && selectedMapCity) {
                           onFilterChange('city', selectedMapCity);
                         }
-                        onFilterChange('geo_area', selected ? 'all' : feature.name);
+                        onFilterChange(
+                          'geo_area',
+                          selected ? 'all' : feature.name
+                        );
                       }}
                     >
                       <title>
                         {feature.name}
-                        {areaMetrics ? ` • ${areaMetrics.listing_count} listings • $${areaMetrics.avg_price ?? 'N/A'} avg` : ''}
+                        {areaMetrics
+                          ? ` • ${areaMetrics.listing_count} listings • $${areaMetrics.avg_price ?? 'N/A'} avg`
+                          : ''}
                       </title>
                     </polygon>
                   );
@@ -278,19 +388,32 @@ function DashboardPanel() {
               </svg>
             </div>
           ) : (
-            <p className="text-sm text-ink-muted mt-4">No GeoJSON map data available for this city in `data/raw`.</p>
+            <p className="text-sm text-ink-muted mt-4">
+              No GeoJSON map data available for this city in `data/raw`.
+            </p>
           )}
         </div>
 
         <div className="table-card">
-          <h3 className="text-lg font-semibold">Occupancy Distribution Across Listings</h3>
+          <h3 className="text-lg font-semibold">
+            Occupancy Distribution Across Listings
+          </h3>
           <div className="mt-4 space-y-2">
-            {occupancyBands.length === 0 && <p className="text-sm text-ink-muted">No occupancy data for current filters.</p>}
+            {occupancyBands.length === 0 && (
+              <p className="text-sm text-ink-muted">
+                No occupancy data for current filters.
+              </p>
+            )}
             {occupancyBands.map((row) => (
               <div key={row.band} className="hbar-row">
                 <div className="hbar-label">{row.band}</div>
                 <div className="hbar-track">
-                  <div className="hbar-fill" style={{ width: `${Math.max((row.count / maxOccBandCount) * 100, row.count > 0 ? 6 : 0)}%` }} />
+                  <div
+                    className="hbar-fill"
+                    style={{
+                      width: `${Math.max((row.count / maxOccBandCount) * 100, row.count > 0 ? 6 : 0)}%`,
+                    }}
+                  />
                 </div>
                 <div className="hbar-value">{row.count}</div>
               </div>
@@ -299,9 +422,15 @@ function DashboardPanel() {
         </div>
 
         <div className="table-card">
-          <h3 className="text-lg font-semibold">Room Type Pricing and Occupancy Snapshot</h3>
+          <h3 className="text-lg font-semibold">
+            Room Type Pricing and Occupancy Snapshot
+          </h3>
           <div className="mt-3 space-y-2">
-            {roomTypeMetricChart.length === 0 && <p className="text-sm text-ink-muted">No room type data for current filters.</p>}
+            {roomTypeMetricChart.length === 0 && (
+              <p className="text-sm text-ink-muted">
+                No room type data for current filters.
+              </p>
+            )}
             {roomTypeMetricChart.map((row) => (
               <div key={`${row.label}-metric`} className="row-item">
                 <div>
@@ -310,7 +439,9 @@ function DashboardPanel() {
                 </div>
                 <div className="row-right">
                   <p>${row.avg_price ?? 'N/A'}</p>
-                  <p className="row-sub">{row.avg_occupancy_pct ?? 'N/A'}% occ</p>
+                  <p className="row-sub">
+                    {row.avg_occupancy_pct ?? 'N/A'}% occ
+                  </p>
                 </div>
               </div>
             ))}
@@ -320,7 +451,11 @@ function DashboardPanel() {
         <div className="table-card">
           <h3 className="text-lg font-semibold">Geo Area Snapshot</h3>
           <div className="mt-3 space-y-2">
-            {geoAreaMetricChart.length === 0 && <p className="text-sm text-ink-muted">No area-level metrics for current filters.</p>}
+            {geoAreaMetricChart.length === 0 && (
+              <p className="text-sm text-ink-muted">
+                No area-level metrics for current filters.
+              </p>
+            )}
             {geoAreaMetricChart.slice(0, 12).map((row) => (
               <div key={row.name} className="row-item">
                 <div>
@@ -329,7 +464,9 @@ function DashboardPanel() {
                 </div>
                 <div className="row-right">
                   <p>${row.avg_price ?? 'N/A'}</p>
-                  <p className="row-sub">{row.avg_occupancy_pct ?? 'N/A'}% occ</p>
+                  <p className="row-sub">
+                    {row.avg_occupancy_pct ?? 'N/A'}% occ
+                  </p>
                 </div>
               </div>
             ))}
@@ -337,15 +474,26 @@ function DashboardPanel() {
         </div>
 
         <div className="table-card lg:col-span-2">
-          <h3 className="text-lg font-semibold">Monthly Listing Activity Trend</h3>
-          <p className="row-sub mt-1">Based on each listing&apos;s `last_review` month, filtered by your current selection.</p>
+          <h3 className="text-lg font-semibold">
+            Monthly Listing Activity Trend
+          </h3>
+          <p className="row-sub mt-1">
+            Based on each listing&apos;s `last_review` month, filtered by your
+            current selection.
+          </p>
           <div className="trend-chart mt-4">
-            {timeSeries.length === 0 && <p className="text-sm text-ink-muted">No trend data for current filters.</p>}
+            {timeSeries.length === 0 && (
+              <p className="text-sm text-ink-muted">
+                No trend data for current filters.
+              </p>
+            )}
             {timeSeries.map((point) => (
               <div key={point.month} className="trend-bar-wrap">
                 <div
                   className="trend-bar"
-                  style={{ height: `${Math.max((point.listing_count / maxListings) * 140, 8)}px` }}
+                  style={{
+                    height: `${Math.max((point.listing_count / maxListings) * 140, 8)}px`,
+                  }}
                   title={`${point.month}: ${point.listing_count} listings`}
                 />
                 <p className="trend-value">{point.listing_count}</p>
@@ -359,11 +507,15 @@ function DashboardPanel() {
                 <div key={`${point.month}-detail`} className="row-item">
                   <div>
                     <p className="row-title">{point.month}</p>
-                    <p className="row-sub">{point.listing_count} active listings</p>
+                    <p className="row-sub">
+                      {point.listing_count} active listings
+                    </p>
                   </div>
                   <div className="row-right">
                     <p>{point.avg_occupancy_pct ?? 'N/A'}% occ</p>
-                    <p className="row-sub">{point.avg_reviews_l30d ?? 'N/A'} rev/30d</p>
+                    <p className="row-sub">
+                      {point.avg_reviews_l30d ?? 'N/A'} rev/30d
+                    </p>
                   </div>
                 </div>
               ))}
@@ -372,9 +524,15 @@ function DashboardPanel() {
         </div>
 
         <div className="table-card">
-          <h3 className="text-lg font-semibold">Top Cities by Demand and Price</h3>
+          <h3 className="text-lg font-semibold">
+            Top Cities by Demand and Price
+          </h3>
           <div className="mt-3 tile-grid">
-            {cities.length === 0 && <p className="text-sm text-ink-muted">No data for current filters.</p>}
+            {cities.length === 0 && (
+              <p className="text-sm text-ink-muted">
+                No data for current filters.
+              </p>
+            )}
             {cities.map((row) => (
               <div key={row.city} className="analytic-tile">
                 <div className="analytic-tile-head">
@@ -383,8 +541,12 @@ function DashboardPanel() {
                 <p className="row-sub">{row.listing_count} listings</p>
                 <p className="analytic-kpi">${row.avg_price ?? 'N/A'}</p>
                 <p className="row-sub">Avg nightly price</p>
-                <p className="analytic-detail">{row.avg_occupancy_pct ?? 'N/A'}% occupancy</p>
-                <p className="analytic-detail">{row.avg_reviews_per_month ?? 'N/A'} reviews/mo</p>
+                <p className="analytic-detail">
+                  {row.avg_occupancy_pct ?? 'N/A'}% occupancy
+                </p>
+                <p className="analytic-detail">
+                  {row.avg_reviews_per_month ?? 'N/A'} reviews/mo
+                </p>
               </div>
             ))}
           </div>
@@ -393,7 +555,11 @@ function DashboardPanel() {
         <div className="table-card">
           <h3 className="text-lg font-semibold">Room Mix Overview</h3>
           <div className="mt-3 tile-grid">
-            {roomTypes.length === 0 && <p className="text-sm text-ink-muted">No data for current filters.</p>}
+            {roomTypes.length === 0 && (
+              <p className="text-sm text-ink-muted">
+                No data for current filters.
+              </p>
+            )}
             {roomTypes.map((row) => (
               <div key={row.room_type} className="analytic-tile">
                 <div className="analytic-tile-head">
@@ -402,7 +568,9 @@ function DashboardPanel() {
                 <p className="row-sub">{row.listing_count} listings</p>
                 <p className="analytic-kpi">${row.avg_price ?? 'N/A'}</p>
                 <p className="row-sub">Avg nightly price</p>
-                <p className="analytic-detail">{row.avg_occupancy_pct ?? 'N/A'}% occupancy</p>
+                <p className="analytic-detail">
+                  {row.avg_occupancy_pct ?? 'N/A'}% occupancy
+                </p>
               </div>
             ))}
           </div>

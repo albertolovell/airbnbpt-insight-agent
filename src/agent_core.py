@@ -63,10 +63,20 @@ prompt = PromptTemplate.from_template(
 
 chain = LLMChain(llm=llm, prompt=prompt)
 _metrics_df = None
-KNOWN_CITIES = [
-  'lisbon', 'porto', 'aveiro', 'cascais', 'sintra', 'vila nova de gaia',
-  'matosinhos', 'oeiras', 'mafra', 'vila do conde'
-]
+CITY_ALIASES = {
+  'lisbon': 'lisboa',
+  'lisboa': 'lisboa',
+  'porto': 'porto',
+  'aveiro': 'aveiro',
+  'cascais': 'cascais',
+  'sintra': 'sintra',
+  'vila nova de gaia': 'vila nova de gaia',
+  'matosinhos': 'matosinhos',
+  'oeiras': 'oeiras',
+  'mafra': 'mafra',
+  'vila do conde': 'vila do conde'
+}
+KNOWN_CITIES = sorted(CITY_ALIASES.keys(), key=len, reverse=True)
 
 def _to_float(value):
   if value is None:
@@ -109,9 +119,9 @@ def get_metrics_df():
 
 def extract_city(query: str):
   q = query.lower()
-  for city in sorted(KNOWN_CITIES, key=len, reverse=True):
-    if city in q:
-      return city
+  for alias in KNOWN_CITIES:
+    if alias in q:
+      return CITY_ALIASES.get(alias, alias)
   return None
 
 def is_metric_query(query: str):
@@ -137,7 +147,7 @@ def answer_metric_query(query: str):
   if 'highest cost' in q or 'most expensive' in q or 'max price' in q:
     priced = filtered.dropna(subset=['price_num'])
     if priced.empty:
-      return {'answer': 'No relevant data found.'}
+      return {'answer': 'Price data is not available in the current dataset.'}
     top = priced.loc[priced['price_num'].idxmax()]
     city_part = f" in {city.title()}" if city else ''
     return {
@@ -157,7 +167,7 @@ def answer_metric_query(query: str):
   if any(p in q for p in ['average price', 'avg price', 'mean price', 'nightly price', 'price per night']):
     priced = filtered.dropna(subset=['price_num'])
     if priced.empty:
-      return {'answer': 'No relevant data found.'}
+      return {'answer': 'Price data is not available in the current dataset.'}
     avg_price = priced['price_num'].mean()
     city_part = f" in {city.title()}" if city else ''
     return {

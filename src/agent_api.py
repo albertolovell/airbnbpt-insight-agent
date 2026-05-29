@@ -111,7 +111,7 @@ def _load_price_fallback_from_visualisations(raw_dir: Path):
     city_slug = city_name.lower().replace(' ', '-')
     url = f"https://data.insideairbnb.com/portugal/{city_slug}/{city_slug}/{date_text}/visualisations/listings.csv"
     try:
-      response = requests.get(url, timeout=30)
+      response = requests.get(url, timeout=30, headers={'User-Agent': 'Mozilla/5.0'})
       if response.status_code != 200:
         continue
       tmp = pd.read_csv(StringIO(response.text), usecols=['id', 'price'])
@@ -242,6 +242,7 @@ def get_dashboard_df():
         lambda row: external_price.get(int(row['id'])) if pd.notna(row['id']) else None,
         axis=1
       )
+  df['price_data_available'] = df['price_num'].notna()
   df['reviews_pm_num'] = pd.to_numeric(df['reviews_per_month'], errors='coerce')
   df['rating_num'] = pd.to_numeric(df['review_scores_rating'], errors='coerce')
   df['accommodates_num'] = pd.to_numeric(df['accommodates'], errors='coerce')
@@ -451,6 +452,7 @@ async def dashboard_data(
   if min_beds > 0:
     filtered = filtered[filtered['beds_num'] >= min_beds]
 
+  has_price_data = filtered['price_num'].notna().any()
   metrics = {
     'listing_count': int(len(filtered)),
     'avg_price': _round_or_none(filtered['price_num'].mean()),
@@ -462,7 +464,8 @@ async def dashboard_data(
     'avg_rating': _round_or_none(filtered['rating_num'].mean()),
     'superhost_share_pct': _round_or_none(filtered['superhost_bool'].mean() * 100 if len(filtered) else None),
     'avg_bedrooms': _round_or_none(filtered['bedrooms_num'].mean()),
-    'avg_beds': _round_or_none(filtered['beds_num'].mean())
+    'avg_beds': _round_or_none(filtered['beds_num'].mean()),
+    'price_data_available': bool(has_price_data)
   }
 
   if filtered.empty:
