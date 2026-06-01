@@ -14,15 +14,15 @@ const DEFAULT_FILTERS = {
 };
 
 function MetricCard({ label, value, prefix = '', suffix = '' }) {
+  const hasValue = value !== null && value !== undefined;
+  const displayValue = hasValue ? `${prefix}${value}${suffix}` : 'Unavailable';
   return (
-    <div className="metric-card">
+    <div className={`metric-card ${hasValue ? '' : 'metric-card-unavailable'}`}>
       <div className="metric-card-head">
         <p className="metric-label">{label}</p>
       </div>
-      <p className="metric-value">
-        {value === null || value === undefined
-          ? 'N/A'
-          : `${prefix}${value}${suffix}`}
+      <p className={`metric-value ${hasValue ? '' : 'metric-value-empty'}`}>
+        {displayValue}
       </p>
     </div>
   );
@@ -30,6 +30,7 @@ function MetricCard({ label, value, prefix = '', suffix = '' }) {
 
 function DashboardPanel() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
@@ -69,6 +70,24 @@ function DashboardPanel() {
   };
   const metrics = data?.metrics || {};
   const priceDataAvailable = metrics.price_data_available !== false;
+  const filterSummary = [];
+  if (filters.city !== 'all') filterSummary.push(`City: ${filters.city}`);
+  if (filters.geo_area !== 'all')
+    filterSummary.push(`Area: ${filters.geo_area}`);
+  if (filters.room_type !== 'all')
+    filterSummary.push(`Room: ${filters.room_type}`);
+  if (filters.property_type !== 'all')
+    filterSummary.push(`Property: ${filters.property_type}`);
+  if (filters.superhost !== 'all')
+    filterSummary.push(`Superhost: ${filters.superhost}`);
+  if (filters.price_level !== 'all')
+    filterSummary.push(`Price level: ${filters.price_level}`);
+  if (filters.min_accommodates > 1)
+    filterSummary.push(`Min guests: ${filters.min_accommodates}`);
+  if (filters.min_bedrooms > 0)
+    filterSummary.push(`Min bedrooms: ${filters.min_bedrooms}`);
+  if (filters.min_beds > 0) filterSummary.push(`Min beds: ${filters.min_beds}`);
+
   const cities = data?.city_breakdown || [];
   const roomTypes = data?.room_type_breakdown || [];
   const timeSeries = data?.time_series || [];
@@ -115,6 +134,11 @@ function DashboardPanel() {
           <h2 className="mt-2 text-3xl font-semibold">
             Portugal listing analytics
           </h2>
+          <p className="mt-3 max-w-2xl text-sm text-ink-subtle">
+            Explore supply and demand across Portugal with filters for city,
+            neighborhood, room type and price tier. Keep an eye on occupancy,
+            availability and reviews when price values are not available.
+          </p>
         </div>
         <button
           type="button"
@@ -125,131 +149,201 @@ function DashboardPanel() {
         </button>
       </div>
 
-      <div className="dashboard-filters mt-6">
-        <label className="filter-field">
-          <span>City</span>
-          <select
-            value={filters.city}
-            onChange={(e) => onFilterChange('city', e.target.value)}
-          >
-            <option value="all">All</option>
-            {options.cities.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="filter-field">
-          <span>Geo Area</span>
-          <select
-            value={filters.geo_area}
-            onChange={(e) => onFilterChange('geo_area', e.target.value)}
-          >
-            <option value="all">All</option>
-            {(options.geo_areas || []).map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="filter-field">
-          <span>Room Type</span>
-          <select
-            value={filters.room_type}
-            onChange={(e) => onFilterChange('room_type', e.target.value)}
-          >
-            <option value="all">All</option>
-            {options.room_types.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="filter-field">
-          <span>Property Type</span>
-          <select
-            value={filters.property_type}
-            onChange={(e) => onFilterChange('property_type', e.target.value)}
-          >
-            <option value="all">All</option>
-            {options.property_types.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="filter-field">
-          <span>Superhost</span>
-          <select
-            value={filters.superhost}
-            onChange={(e) => onFilterChange('superhost', e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </label>
-
-        <label className="filter-field">
-          <span>Price Level</span>
-          <select
-            value={filters.price_level}
-            onChange={(e) => onFilterChange('price_level', e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </label>
-
-        <label className="filter-field">
-          <span>Min Accommodates</span>
-          <input
-            type="number"
-            min="1"
-            value={filters.min_accommodates}
-            onChange={(e) => onFilterChange('min_accommodates', e.target.value)}
-          />
-        </label>
-
-        <label className="filter-field">
-          <span>Min Bedrooms</span>
-          <input
-            type="number"
-            min="0"
-            value={filters.min_bedrooms}
-            onChange={(e) => onFilterChange('min_bedrooms', e.target.value)}
-          />
-        </label>
-
-        <label className="filter-field">
-          <span>Min Beds</span>
-          <input
-            type="number"
-            min="0"
-            value={filters.min_beds}
-            onChange={(e) => onFilterChange('min_beds', e.target.value)}
-          />
-        </label>
+      <div className="dashboard-filters-header mt-6">
+        <div>
+          <p className="text-sm uppercase tracking-[0.3em] text-ink-muted">
+            Filters
+          </p>
+          <p className="mt-1 text-sm text-ink-subtle">
+            {activeFilterCount > 0
+              ? `${activeFilterCount} active filter${activeFilterCount > 1 ? 's' : ''}`
+              : 'No filters applied'}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="pill"
+          onClick={() => setFiltersOpen((prev) => !prev)}
+        >
+          {filtersOpen ? 'Hide filters' : 'Show filters'}
+        </button>
       </div>
+      {filtersOpen && (
+        <div className="dashboard-filters mt-4">
+          <label className="filter-field">
+            <span>City</span>
+            <select
+              value={filters.city}
+              onChange={(e) => onFilterChange('city', e.target.value)}
+            >
+              <option value="all">All</option>
+              {options.cities.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
 
+          <label className="filter-field">
+            <span>Geo Area</span>
+            <select
+              value={filters.geo_area}
+              onChange={(e) => onFilterChange('geo_area', e.target.value)}
+            >
+              <option value="all">All</option>
+              {(options.geo_areas || []).map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="filter-field">
+            <span>Room Type</span>
+            <select
+              value={filters.room_type}
+              onChange={(e) => onFilterChange('room_type', e.target.value)}
+            >
+              <option value="all">All</option>
+              {options.room_types.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="filter-field">
+            <span>Property Type</span>
+            <select
+              value={filters.property_type}
+              onChange={(e) => onFilterChange('property_type', e.target.value)}
+            >
+              <option value="all">All</option>
+              {options.property_types.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="filter-field">
+            <span>Superhost</span>
+            <select
+              value={filters.superhost}
+              onChange={(e) => onFilterChange('superhost', e.target.value)}
+            >
+              <option value="all">All</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </label>
+
+          <label className="filter-field">
+            <span>Price Level</span>
+            <select
+              value={filters.price_level}
+              onChange={(e) => onFilterChange('price_level', e.target.value)}
+            >
+              <option value="all">All</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+
+          <label className="filter-field">
+            <span>Min Accommodates</span>
+            <input
+              type="number"
+              min="1"
+              value={filters.min_accommodates}
+              onChange={(e) =>
+                onFilterChange('min_accommodates', e.target.value)
+              }
+            />
+          </label>
+
+          <label className="filter-field">
+            <span>Min Bedrooms</span>
+            <input
+              type="number"
+              min="0"
+              value={filters.min_bedrooms}
+              onChange={(e) => onFilterChange('min_bedrooms', e.target.value)}
+            />
+          </label>
+
+          <label className="filter-field">
+            <span>Min Beds</span>
+            <input
+              type="number"
+              min="0"
+              value={filters.min_beds}
+              onChange={(e) => onFilterChange('min_beds', e.target.value)}
+            />
+          </label>
+        </div>
+      )}
+
+      <div
+        className={`dashboard-banner mt-6 ${priceDataAvailable ? 'banner-success' : 'banner-warning'}`}
+      >
+        <p className="banner-heading">
+          {priceDataAvailable
+            ? 'Price metrics are available for this dataset.'
+            : 'Price metrics are currently unavailable.'}
+        </p>
+        <p className="banner-copy">
+          {priceDataAvailable
+            ? 'Refine the dashboard with filters to compare average price across segments.'
+            : 'The current dataset lacks reliable nightly price values. Use occupancy and availability as the primary signals instead.'}
+        </p>
+      </div>
+      {filterSummary.length > 0 && (
+        <div className="filter-summary mt-4">
+          Active filters: {filterSummary.join(' · ')}
+        </div>
+      )}
+      <div className="table-card mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Quick start</h3>
+            <p className="row-sub mt-1">
+              Use one of these quick actions to explore the most useful listing
+              segments faster.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="pill"
+            onClick={() => setFilters(DEFAULT_FILTERS)}
+          >
+            Reset filters
+          </button>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {quickActions.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className="row-item quick-action"
+              onClick={item.action}
+            >
+              <div>
+                <p className="row-title">{item.label}</p>
+                <p className="row-sub">{item.description}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
       {error && <p className="mt-4 text-sm text-rose-500">{error}</p>}
       {loading && (
         <p className="mt-4 text-sm text-ink-muted">Loading dashboard...</p>
-      )}
-      {!loading && !priceDataAvailable && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Price metrics are unavailable for the current dataset.
-        </div>
       )}
 
       <div className="metric-grid mt-6">
