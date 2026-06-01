@@ -613,6 +613,24 @@ h4 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  overflow: hidden;
+  transition:
+    max-height 250ms ease,
+    opacity 250ms ease,
+    transform 250ms ease;
+}
+
+.dashboard-filters.filters-open {
+  max-height: 1000px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dashboard-filters.filters-closed {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
 }
 
 .quick-action {

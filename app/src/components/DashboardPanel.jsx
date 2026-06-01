@@ -87,6 +87,7 @@ function DashboardPanel() {
   if (filters.min_bedrooms > 0)
     filterSummary.push(`Min bedrooms: ${filters.min_bedrooms}`);
   if (filters.min_beds > 0) filterSummary.push(`Min beds: ${filters.min_beds}`);
+  const activeFilterCount = filterSummary.length;
 
   const cities = data?.city_breakdown || [];
   const roomTypes = data?.room_type_breakdown || [];
@@ -168,126 +169,125 @@ function DashboardPanel() {
           {filtersOpen ? 'Hide filters' : 'Show filters'}
         </button>
       </div>
-      {filtersOpen && (
-        <div className="dashboard-filters mt-4">
-          <label className="filter-field">
-            <span>City</span>
-            <select
-              value={filters.city}
-              onChange={(e) => onFilterChange('city', e.target.value)}
-            >
-              <option value="all">All</option>
-              {options.cities.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+      <div
+        className={`dashboard-filters mt-4 ${filtersOpen ? 'filters-open' : 'filters-closed'}`}
+        aria-hidden={!filtersOpen}
+      >
+        <label className="filter-field">
+          <span>City</span>
+          <select
+            value={filters.city}
+            onChange={(e) => onFilterChange('city', e.target.value)}
+          >
+            <option value="all">All</option>
+            {options.cities.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          <label className="filter-field">
-            <span>Geo Area</span>
-            <select
-              value={filters.geo_area}
-              onChange={(e) => onFilterChange('geo_area', e.target.value)}
-            >
-              <option value="all">All</option>
-              {(options.geo_areas || []).map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+        <label className="filter-field">
+          <span>Geo Area</span>
+          <select
+            value={filters.geo_area}
+            onChange={(e) => onFilterChange('geo_area', e.target.value)}
+          >
+            <option value="all">All</option>
+            {(options.geo_areas || []).map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          <label className="filter-field">
-            <span>Room Type</span>
-            <select
-              value={filters.room_type}
-              onChange={(e) => onFilterChange('room_type', e.target.value)}
-            >
-              <option value="all">All</option>
-              {options.room_types.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+        <label className="filter-field">
+          <span>Room Type</span>
+          <select
+            value={filters.room_type}
+            onChange={(e) => onFilterChange('room_type', e.target.value)}
+          >
+            <option value="all">All</option>
+            {options.room_types.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          <label className="filter-field">
-            <span>Property Type</span>
-            <select
-              value={filters.property_type}
-              onChange={(e) => onFilterChange('property_type', e.target.value)}
-            >
-              <option value="all">All</option>
-              {options.property_types.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+        <label className="filter-field">
+          <span>Property Type</span>
+          <select
+            value={filters.property_type}
+            onChange={(e) => onFilterChange('property_type', e.target.value)}
+          >
+            <option value="all">All</option>
+            {options.property_types.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          <label className="filter-field">
-            <span>Superhost</span>
-            <select
-              value={filters.superhost}
-              onChange={(e) => onFilterChange('superhost', e.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-            </select>
-          </label>
+        <label className="filter-field">
+          <span>Superhost</span>
+          <select
+            value={filters.superhost}
+            onChange={(e) => onFilterChange('superhost', e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </label>
 
-          <label className="filter-field">
-            <span>Price Level</span>
-            <select
-              value={filters.price_level}
-              onChange={(e) => onFilterChange('price_level', e.target.value)}
-            >
-              <option value="all">All</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </label>
+        <label className="filter-field">
+          <span>Price Level</span>
+          <select
+            value={filters.price_level}
+            onChange={(e) => onFilterChange('price_level', e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
 
-          <label className="filter-field">
-            <span>Min Accommodates</span>
-            <input
-              type="number"
-              min="1"
-              value={filters.min_accommodates}
-              onChange={(e) =>
-                onFilterChange('min_accommodates', e.target.value)
-              }
-            />
-          </label>
+        <label className="filter-field">
+          <span>Min Accommodates</span>
+          <input
+            type="number"
+            min="1"
+            value={filters.min_accommodates}
+            onChange={(e) => onFilterChange('min_accommodates', e.target.value)}
+          />
+        </label>
 
-          <label className="filter-field">
-            <span>Min Bedrooms</span>
-            <input
-              type="number"
-              min="0"
-              value={filters.min_bedrooms}
-              onChange={(e) => onFilterChange('min_bedrooms', e.target.value)}
-            />
-          </label>
+        <label className="filter-field">
+          <span>Min Bedrooms</span>
+          <input
+            type="number"
+            min="0"
+            value={filters.min_bedrooms}
+            onChange={(e) => onFilterChange('min_bedrooms', e.target.value)}
+          />
+        </label>
 
-          <label className="filter-field">
-            <span>Min Beds</span>
-            <input
-              type="number"
-              min="0"
-              value={filters.min_beds}
-              onChange={(e) => onFilterChange('min_beds', e.target.value)}
-            />
-          </label>
-        </div>
-      )}
+        <label className="filter-field">
+          <span>Min Beds</span>
+          <input
+            type="number"
+            min="0"
+            value={filters.min_beds}
+            onChange={(e) => onFilterChange('min_beds', e.target.value)}
+          />
+        </label>
+      </div>
 
       <div
         className={`dashboard-banner mt-6 ${priceDataAvailable ? 'banner-success' : 'banner-warning'}`}
