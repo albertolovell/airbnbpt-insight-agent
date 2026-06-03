@@ -222,6 +222,7 @@ def get_dashboard_df():
     'id', 'neighbourhood_group_cleansed', 'neighbourhood_cleansed', 'room_type', 'property_type', 'price',
     'latitude', 'longitude',
     'availability_365', 'estimated_occupancy_l365d', 'estimated_revenue_l365d',
+    'last_scraped',
     'reviews_per_month', 'review_scores_rating', 'accommodates', 'host_is_superhost', 'bedrooms', 'beds',
     'first_review', 'last_review', 'number_of_reviews_l30d', 'number_of_reviews_ltm'
   ]
@@ -256,6 +257,8 @@ def get_dashboard_df():
   df['city_name'] = df['city_name'].fillna('Unknown')
   df['lat_num'] = pd.to_numeric(df['latitude'], errors='coerce')
   df['lon_num'] = pd.to_numeric(df['longitude'], errors='coerce')
+  df['last_scraped_dt'] = pd.to_datetime(df['last_scraped'], errors='coerce')
+  df['last_scraped_month'] = df['last_scraped_dt'].dt.to_period('M')
   df['first_review_dt'] = pd.to_datetime(df['first_review'], errors='coerce')
   df['last_review_dt'] = pd.to_datetime(df['last_review'], errors='coerce')
   df['last_review_month'] = df['last_review_dt'].dt.to_period('M')
@@ -551,8 +554,8 @@ async def dashboard_data(
     ]
 
     monthly = (
-      filtered.dropna(subset=['last_review_month'])
-      .groupby('last_review_month')
+      filtered.dropna(subset=['last_scraped_month'])
+      .groupby('last_scraped_month')
       .agg(
         listing_count=('id', 'count'),
         avg_reviews_per_month=('reviews_pm_num', 'mean'),
@@ -560,14 +563,14 @@ async def dashboard_data(
         avg_occupancy_pct=('occupancy_num', 'mean')
       )
       .reset_index()
-      .sort_values('last_review_month')
+      .sort_values('last_scraped_month')
     )
     if len(monthly) > 18:
       monthly = monthly.tail(18)
 
     time_series = [
       {
-        'month': str(row['last_review_month']),
+        'month': str(row['last_scraped_month']),
         'listing_count': int(row['listing_count']),
         'avg_reviews_per_month': _round_or_none(row['avg_reviews_per_month']),
         'avg_reviews_l30d': _round_or_none(row['avg_reviews_l30d']),

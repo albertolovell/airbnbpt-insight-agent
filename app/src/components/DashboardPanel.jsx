@@ -643,33 +643,36 @@ function DashboardPanel() {
 
         <div className="table-card lg:col-span-2">
           <h3 className="text-lg font-semibold">
-            Monthly Listing Activity Trend
+            Calendar Snapshot Occupancy Trend
           </h3>
           <p className="row-sub mt-1">
-            Based on each listing&apos;s `last_review` month, filtered by your
-            current selection.
+            Based on the scrape month of each snapshot, showing average
+            occupancy for filtered listings by calendar month.
           </p>
           <div className="trend-chart mt-4">
-            {timeSeries.length === 0 && (
+            {timeSeries.length === 0 ? (
               <p className="text-sm text-ink-muted">
                 No trend data for current filters.
               </p>
+            ) : (
+              timeSeries.map((point) => (
+                <div key={point.month} className="trend-column">
+                  <div
+                    className="trend-bar"
+                    style={{
+                      height: `${Math.max((point.avg_occupancy_pct / 100) * 140, 8)}px`,
+                    }}
+                    title={`${formatTrendMonthLabel(point.month)}: ${point.avg_occupancy_pct}% avg occupancy (${point.listing_count} listings)`}
+                  />
+                  <p className="trend-value">
+                    {point.avg_occupancy_pct ?? '—'}%
+                  </p>
+                  <p className="trend-label">
+                    {formatTrendMonthLabel(point.month)}
+                  </p>
+                </div>
+              ))
             )}
-            {timeSeries.map((point) => (
-              <div key={point.month} className="trend-bar-wrap">
-                <div
-                  className="trend-bar"
-                  style={{
-                    height: `${Math.max((point.listing_count / maxListings) * 140, 8)}px`,
-                  }}
-                  title={`${formatTrendMonthLabel(point.month)}: ${point.listing_count} listings`}
-                />
-                <p className="trend-value">{point.listing_count}</p>
-                <p className="trend-label">
-                  {formatTrendMonthLabel(point.month)}
-                </p>
-              </div>
-            ))}
           </div>
           {timeSeries.length > 0 && (
             <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -680,7 +683,8 @@ function DashboardPanel() {
                       {formatTrendMonthLabel(point.month)}
                     </p>
                     <p className="row-sub">
-                      {point.listing_count} active listings
+                      {point.avg_occupancy_pct}% avg occupancy ·{' '}
+                      {point.listing_count} listings
                     </p>
                   </div>
                   <div className="row-right">
