@@ -125,6 +125,37 @@ function DashboardPanel() {
     }));
   };
 
+  const formatTrendMonthLabel = (monthKey) => {
+    if (!monthKey) return '';
+    const normalized = monthKey.toString().trim();
+    const isoMatch = normalized.match(/^(\d{4})[-_]?([01]\d)$/);
+    const ymdMatch = normalized.match(/^(\d{4})(\d{2})$/);
+    const digitsMatch = normalized.match(/^(\d{2})(\d{2})$/);
+
+    let year;
+    let month;
+    if (isoMatch) {
+      year = isoMatch[1];
+      month = isoMatch[2];
+    } else if (ymdMatch) {
+      year = ymdMatch[1];
+      month = ymdMatch[2];
+    } else if (digitsMatch) {
+      year = `20${digitsMatch[1]}`;
+      month = digitsMatch[2];
+    } else {
+      return monthKey;
+    }
+
+    const monthNum = Number(month);
+    if (monthNum < 1 || monthNum > 12) return monthKey;
+
+    return new Date(Number(year), monthNum - 1, 1).toLocaleString('en-US', {
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
   const quickActions = [
     {
       label: 'Lisbon shared rooms',
@@ -631,10 +662,12 @@ function DashboardPanel() {
                   style={{
                     height: `${Math.max((point.listing_count / maxListings) * 140, 8)}px`,
                   }}
-                  title={`${point.month}: ${point.listing_count} listings`}
+                  title={`${formatTrendMonthLabel(point.month)}: ${point.listing_count} listings`}
                 />
                 <p className="trend-value">{point.listing_count}</p>
-                <p className="trend-label">{point.month.slice(2)}</p>
+                <p className="trend-label">
+                  {formatTrendMonthLabel(point.month)}
+                </p>
               </div>
             ))}
           </div>
@@ -643,7 +676,9 @@ function DashboardPanel() {
               {timeSeries.slice(-6).map((point) => (
                 <div key={`${point.month}-detail`} className="row-item">
                   <div>
-                    <p className="row-title">{point.month}</p>
+                    <p className="row-title">
+                      {formatTrendMonthLabel(point.month)}
+                    </p>
                     <p className="row-sub">
                       {point.listing_count} active listings
                     </p>
