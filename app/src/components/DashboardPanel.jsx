@@ -125,6 +125,49 @@ function DashboardPanel() {
     }));
   };
 
+  const quickActions = [
+    {
+      label: 'Lisbon shared rooms',
+      description: 'Show shared rooms in Lisbon for budget-conscious searches.',
+      action: () =>
+        setFilters({
+          ...DEFAULT_FILTERS,
+          city: 'Lisbon',
+          room_type: 'Shared room',
+          price_level: 'low',
+        }),
+    },
+    {
+      label: 'Porto entire homes',
+      description:
+        'Compare entire home listings in Porto with strong occupancy.',
+      action: () =>
+        setFilters({
+          ...DEFAULT_FILTERS,
+          city: 'Porto',
+          room_type: 'Entire home/apt',
+        }),
+    },
+    {
+      label: 'Superhosts only',
+      description: 'Focus on listings with a superhost badge across Portugal.',
+      action: () =>
+        setFilters({
+          ...DEFAULT_FILTERS,
+          superhost: 'yes',
+        }),
+    },
+    {
+      label: 'High-rated stays',
+      description: 'Show listings with higher-than-average bedroom counts.',
+      action: () =>
+        setFilters({
+          ...DEFAULT_FILTERS,
+          min_bedrooms: 2,
+        }),
+    },
+  ];
+
   return (
     <section className="dashboard-panel rounded-3xl border border-sand bg-white/80 p-6 shadow-soft backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-4">
